@@ -5,6 +5,6 @@
 
 | Platform     | Build Version | Download Link                                                 |
 |--------------|---------------|---------------------------------------------------------------|
-| Windows      | v1.0.0        | [Download](https://github.com/ThaaoBlues/qsync/releases/download/0.0.1-Pre-Alpha/qsync_windows_x64.exe) |
-| Linux        | v1.0.0        | [Download](https://github.com/ThaaoBlues/qsync/releases/download/0.0.1-Pre-Alpha/qsync_linux) |
-| Android      | v1.0.0        | Not Published yet                                        |
+| Windows      | 0.0.1-Pre-Alpha        | [Download](https://github.com/ThaaoBlues/qsync/releases/download/0.0.1-Pre-Alpha/qsync_windows_x64.exe) |
+| Linux        | 0.0.1-Pre-Alpha        | [Download](https://github.com/ThaaoBlues/qsync/releases/download/0.0.1-Pre-Alpha/qsync_linux) |
+| Android      | 0.0.1-Pre-Alpha        | Not Published yet                                        |
