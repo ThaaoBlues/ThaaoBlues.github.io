@@ -5,6 +5,6 @@
 
 | Platform     | Build Version | Download Link                                                 |
 |--------------|---------------|---------------------------------------------------------------|
-| Windows      | 0.0.4-Beta        | [Download](https://github.com/ThaaoBlues/qsync/releases/download/0.0.4-Beta/qsync_windows_x64.exe) |
-| Linux        | 0.0.4-Beta        | [Download](https://github.com/ThaaoBlues/qsync/releases/download/0.0.4-Beta/qsync_linux)           |
-| Android      | 0.0.4-Beta        | [Download](https://github.com/ThaaoBlues/ecosys_mobile/raw/master/app/release/app-release.apk)     |
+| Windows      | 0.0.4-Beta        | [Download](https://github.com/ThaaoBlues/qsync/releases/latest/download/ecosys_windows_x64.exe) |
+| Linux        | 0.0.4-Beta        | [Download](https://github.com/ThaaoBlues/qsync/releases/latest/download/qsync_linux_x64)        |
+| Android      | 0.0.4-Beta        | [Download](https://github.com/ThaaoBlues/ecosys_mobile/raw/master/app/release/app-release.apk)  |
