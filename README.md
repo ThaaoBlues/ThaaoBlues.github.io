@@ -1,6 +1,7 @@
-# Hi ! I'm ThaaoBlues, A French CS student :)
+# Hi ! I'm ThaaoBlues, A French CS student as the National Institue of Applied Science (INSA) of Toulouse 🦊 :)
 
-## You can visit my latest project [here](https://github.com/thaaoblues/qsync)
+## You can learn more about my latest project, Ecosys, [here](https://github.com/thaaoblues/qsync).
+
 ## Ecosys downloads :
 
 | Platform     | Build Version | Download Link                                                 |
