@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Ecosys - Command-line style features and download page">
+    <title>ecosys - Terminal Website</title>
+    <style>
+        body {
+            background-color: #1E1E1E;
+            color: #00FF00;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 0;
+        }
+        .terminal {
+            width: 100%;
+            height: 100vh;
+            padding: 20px;  
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            
+        }
+        .line {
+            display: flex;
+        }
+        .prompt {
+            color: #00FF00;
+            margin-top: 5px;
+        }
+        .input-area {
+            border: none;
+            background: transparent;
+            color: #00FF00;
+            outline: none;
+            width: 100%;
+            font-size: large;
+        }
+        .links a {
+            color: #00FF00;
+            text-decoration: none;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        footer {
+            position: absolute;
+            bottom: 10px;
+            left: 20px;
+            font-size: 12px;
+        }
+        .ascii-art {
+            white-space: pre;
+            color: #00FF00;
+            margin-bottom: 20px;
+        }
+
+        .menu {
+            color: #00FF00;
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="ascii-art">
+
+
+            $$$$$$$$\  $$$$$$\   $$$$$$\   $$$$$$\ $$\     $$\  $$$$$$\  
+            $$  _____|$$  __$$\ $$  __$$\ $$  __$$\\$$\   $$  |$$  __$$\ 
+            $$ |      $$ /  \__|$$ /  $$ |$$ /  \__|\$$\ $$  / $$ /  \__|
+            $$$$$\    $$ |      $$ |  $$ |\$$$$$$\   \$$$$  /  \$$$$$$\  
+            $$  __|   $$ |      $$ |  $$ | \____$$\   \$$  /    \____$$\ 
+            $$ |      $$ |  $$\ $$ |  $$ |$$\   $$ |   $$ |    $$\   $$ |
+            $$$$$$$$\ \$$$$$$  | $$$$$$  |\$$$$$$  |   $$ |    \$$$$$$  |
+            \________| \______/  \______/  \______/    \__|     \______/ 
+                                                                         
+                                                                         
+                                                                                       
+        </div>
+        <div class="menu">
+            Welcome to <b>ECOSYS</b>! Type a command to continue:
+            <ul>
+                <li><b>features</b> - Display the features of ECOSYS.</li>
+                <li><b>downloads</b> - Download ECOSYS for desktop or mobile.</li>
+                <li><b>about</b> - Learn more about ECOSYS.</li>
+            </ul>
+        </div>
+        <div id="output"></div>
+        <div class="line">
+            <span class="prompt">root@ecosys:~$</span>
+            <input id="input" class="input-area" autofocus />
+        </div>
+    </div>
+    <footer>
+        <p>root@ecosys:~$ Static Terminal UI | <a href="https://github.com/thaaoblues/ecosys" target="_blank">GitHub</a></p>
+    </footer>
+
+    <script>
+        const output = document.getElementById('output');
+        const input = document.getElementById('input');
+
+        const commands = {
+            'features': `
+<b>ecosys</b> Features:<br>
+1. Automatic synchronization between multiple devices.<br>
+2. Multi-purpose tool for file management and resource sharing.<br>
+3. Supports real-time synchronization across diverse environments.<br>
+4. Configurable for different use cases with minimal setup.<br>
+            `,
+            'downloads': `
+Download <b>ecosys</b> from:
+- <a href="https://github.com/ThaaoBlues/qsync/releases/latest/download/ecosys_windows_x64.exe" target="_blank">Windows Desktop Version</a><br>
+- <a href="https://github.com/ThaaoBlues/qsync/releases/latest/download/ecosys_linux_x64.exe" target="_blank">Linux Desktop Version</a><br>
+- <a href="https://github.com/ThaaoBlues/ecosys_mobile/raw/master/app/release/app-release.apk" target="_blank">Android Version</a><br>
+            `,
+            'about': `
+<b>ecosys</b> is an open-source tool for managing synchronization across devices,<br> designed for efficiency and flexibility. <br>It simplifies cross-device file handling.            `
+        };
+
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                const command = input.value.trim();
+                if (commands[command]) {
+                    output.innerHTML += `<div><span class="prompt">root@ecosys:~$ </span>${command}</div>`;
+                    output.innerHTML += `<div>${commands[command]}</div>`;
+                } else {
+                    output.innerHTML += `<div><span class="prompt">root@ecosys:~$ </span>${command}</div>`;
+                    output.innerHTML += `<div>Command not found: ${command}</div>`;
+                }
+                input.value = '';
+                window.scrollTo(0, document.body.scrollHeight);
+            }
+        });
+    </script>
+</body>
+</html>
