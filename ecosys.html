@@ -62,6 +62,10 @@
             margin-top: 10px;
         }
 
+        .link {
+            color: #00FF00;
+        }
+
     </style>
 </head>
 <body>
@@ -84,9 +88,10 @@
         <div class="menu">
             Welcome to <b>ECOSYS</b>! Type a command to continue:
             <ul>
-                <li><b>features</b> - Display the features of ECOSYS.</li>
-                <li><b>downloads</b> - Download ECOSYS for desktop or mobile.</li>
-                <li><b>about</b> - Learn more about ECOSYS.</li>
+                <li><b onclick="displayCommand('features')">features</b> - Display the features of ECOSYS.</li>
+                <li><b onclick="displayCommand('downloads')">downloads</b> - Download ECOSYS for desktop or mobile.</li>
+                <li><b onclick="displayCommand('about')">about</b> - Learn more about ECOSYS.</li>
+                <li><b onclick="displayCommand('github')">github</b> - Look at the Github repository</li>
             </ul>
         </div>
         <div id="output"></div>
@@ -103,7 +108,7 @@
         const output = document.getElementById('output');
         const input = document.getElementById('input');
 
-        const commands = {
+        const textCommands = {
             'features': `
 <b>ecosys</b> Features:<br>
 1. Automatic synchronization between multiple devices.<br>
@@ -112,25 +117,41 @@
 4. Configurable for different use cases with minimal setup.<br>
             `,
             'downloads': `
-Download <b>ecosys</b> from:
-- <a href="https://github.com/ThaaoBlues/qsync/releases/latest/download/ecosys_windows_x64.exe" target="_blank">Windows Desktop Version</a><br>
-- <a href="https://github.com/ThaaoBlues/qsync/releases/latest/download/ecosys_linux_x64.exe" target="_blank">Linux Desktop Version</a><br>
-- <a href="https://github.com/ThaaoBlues/ecosys_mobile/raw/master/app/release/app-release.apk" target="_blank">Android Version</a><br>
+Download <b>ecosys</b> from:<br>
+- <a href="https://github.com/ThaaoBlues/qsync/releases/latest/download/ecosys_windows_x64.exe" target="_blank" class="link">Windows Desktop Version</a><br>
+- <a href="https://github.com/ThaaoBlues/qsync/releases/latest/download/ecosys_linux_x64.exe" target="_blank" class="link">Linux Desktop Version</a><br>
+- <a href="https://github.com/ThaaoBlues/ecosys_mobile/raw/master/app/release/app-release.apk" target="_blank" class="link">Android Version</a><br>
             `,
             'about': `
 <b>ecosys</b> is an open-source tool for managing synchronization across devices,<br> designed for efficiency and flexibility. <br>It simplifies cross-device file handling.            `
         };
 
+        function displayCommand(command){
+            if (textCommands[command]) {
+                output.innerHTML += `<div><span class="prompt">root@ecosys:~$ </span>${command}</div>`;
+                output.innerHTML += `<div>${textCommands[command]}</div>`;
+            } else {
+
+                switch(command){
+                    case "clear":
+                        document.getElementById("output").innerHTML = "";
+                        break;
+                    case "github":
+                        window.open("https://github.com/thaaoblues/ecosys");
+                        break;
+
+                    default:
+                        output.innerHTML += `<div><span class="prompt">root@ecosys:~$ </span>${command}</div>`;
+                        output.innerHTML += `<div>Command not found: ${command}</div>`;
+                }
+
+            }
+        }
+
         input.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
                 const command = input.value.trim();
-                if (commands[command]) {
-                    output.innerHTML += `<div><span class="prompt">root@ecosys:~$ </span>${command}</div>`;
-                    output.innerHTML += `<div>${commands[command]}</div>`;
-                } else {
-                    output.innerHTML += `<div><span class="prompt">root@ecosys:~$ </span>${command}</div>`;
-                    output.innerHTML += `<div>Command not found: ${command}</div>`;
-                }
+                displayCommand(command);
                 input.value = '';
                 window.scrollTo(0, document.body.scrollHeight);
             }
