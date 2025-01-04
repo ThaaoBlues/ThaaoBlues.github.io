@@ -136,6 +136,7 @@ async function remplirMagasinCollegues(){
                         //lancer l'animation d'achat avec l'image correspondante
                         let image = document.getElementById("image_collegue_animee")
                         image.setAttribute("src",collegue.nom_fichier_image)
+                        image.setAttribute("alt","image de "+collegue.nom)
                         // affiche l'image
                         image.removeAttribute("hidden")
 
