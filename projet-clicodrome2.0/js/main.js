@@ -242,7 +242,7 @@ function leBoostDuProf(){
         rickRoll()
         i+=1
     }
-    score += 1000000
+    score += 1000000000
     majAffichageScore()
     
 }
