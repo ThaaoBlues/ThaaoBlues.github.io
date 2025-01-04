@@ -404,13 +404,14 @@ function cadeauClickCallback(){
             }
         } 
     
-        // enlève le cadeau
-        div_cadeau.style.display = "none";
+
     
         // génère un nouveau timer pour le prochain cadeau à afficher !
         setTimeout(genererCadeau, Math.random() * 10000 + 20000); // Premier affichage aléatoire entre 20 et 30 secondes
     
     })
+    // enlève le cadeau avant que le callback soit executé pour ne pas voir le cadeau sur l'alert
+    div_cadeau.style.display = "none";
 
 }
 
