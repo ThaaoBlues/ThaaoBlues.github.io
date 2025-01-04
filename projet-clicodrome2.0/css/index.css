@@ -9,15 +9,22 @@
     }
 }
 
-#image_collegue_animee {
-    width: auto;
-    height: auto;
-    animation: faireTournerImage 2s linear forwards infinite;
+#image-collegue-section{
+    position: fixed;
+    width: 100vw;
+    top:15vh;
     z-index: 1;
 }
 
+#image_collegue_animee {
+    animation: faireTournerImage 2s linear forwards infinite;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 75vw;
+}
+
 .div-centrer-contenu{
-    width: 100;
+    width: 100%;
     justify-content: center;
     text-align: center;
 }
@@ -64,13 +71,6 @@
 
 #table_magasin_collegues{
     margin-top: 10px;
-}
-
-#image_collegue_animee{
-    z-index:1; 
-    position: absolute;
-    top: 20px; 
-    left:35%;
 }
 
 #never{
