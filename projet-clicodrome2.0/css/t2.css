@@ -1,0 +1,74 @@
+/* t2.css - HTML+ */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f55555;
+    color: #333333;
+    margin: 10;
+    padding: 20px;
+}
+
+output {
+    color: aqua;
+    font-size: 75px;
+    border:dotted #00ff62;
+    border-radius: 14px;
+}
+
+button {
+    padding: 8px 15px;
+    border: 1px solid #ddd;
+    background-color: #0206ff;
+    cursor: pointer;
+    color: #ddd;
+}
+
+button:hover {
+    background-color: #bbb;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+}
+
+th {
+    font-family:Impact;
+    color: rgb(38, 231, 17);
+} 
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 15px solid #e99d0f;
+    text-align: center;
+}
+
+td, th {
+    padding: 8px;
+    text-align: left;
+    border: 8px solid #fc04fc;
+}
+
+div.ad{
+    visibility: visible;
+    display: block !important;
+    
+    width: 150px;
+    padding: 12px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #87bc44;
+    background: #e0ff92;
+    line-height: 1.2;
+    }
+div.ad.adt3{
+    visibility: hidden;
+}
+table.table-magasin{
+    width: 150px;
+    padding: 12px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+
+}

@@ -1,0 +1,112 @@
+/* t8.css - HTML 5 */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+main {
+    max-width: 960px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+output{
+    font-size: 30px ;
+}
+
+button {
+    padding: 20px 40px;
+    border: none;
+    background-color: #e74c3c;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+    background-color: #ff9900;
+    transform: translateY(-3px);
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 20px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+table {
+    width: 100;
+    border-collapse: collapse;
+    margin: 20px 0;
+    border: 2px solid #ff9900;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+td, th {
+    padding: 25px;
+    text-align: left;
+    border: 1px solid #ff9900;
+    font-size: 18px;
+}
+
+td {
+    background-color: #ecf0f1;
+}
+
+th {
+    background-color: #ff9900;
+    color: white;
+}
+
+table tr:hover {
+    background-color: #f1f1f1;
+}
+/* table.table_magasin{
+    width: 150px;
+    padding: 12px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+} */
+
+a{
+    color: #fda500;
+}
+
+a:visited{
+    color: #e74c3c;
+}
+
+footer {
+    text-align: center;
+    padding: 10px ;    border-radius: 5px;
+
+    background-color: #e74c3c;
+    color: white;
+    margin-top: 40px;
+    font-size: 14px;
+}
+
+div.card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin: 20px 0;
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+div.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}

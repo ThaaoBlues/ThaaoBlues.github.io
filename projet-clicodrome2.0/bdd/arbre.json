@@ -1,0 +1,231 @@
+{
+    "technologies": {
+      "html": {
+        "nom": "HTML",
+        "elements": {
+          "button": {
+          }
+        },
+        "boost": 2,
+        "cout": 10,
+        "borne": 5,
+        "evolution":0,
+        "css_id": "t1.css",
+        "narration": "C'est le début de l'aventure web ! HTML, le langage de base, permet de structurer des pages avec des titres, des paragraphes, des listes, et surtout des boutons pour interagir avec les utilisateurs. Vous avez posé les premières pierres de l'Internet. Le web commence tout juste à s'ouvrir au monde."
+      },
+  
+      "html+": {
+        "nom": "HTML+",
+        "elements": {
+          "button": {
+
+          }
+        },
+        "boost": 5,
+        "cout": 100,
+        "borne": 50,
+        "evolution":1,
+        "css_id": "t2.css",
+        "narration": "L'HTML+ améliore ce que vous avez construit. Plus de possibilités pour styliser votre page, et le pouvoir d'ajouter des formulaires et des éléments interactifs. Le web devient plus attrayant et engageant, prêt à accueillir un public plus large !"
+      },
+  
+      "html_2.0": {
+        "nom": "HTML 2.0",
+        "elements": {
+          "button": {
+
+          }
+        },
+        "boost": 10,
+        "cout": 1000,
+        "borne": 500,
+        "evolution":2,
+        "css_id": "t3.css",
+        "narration": "HTML 2.0 est arrivé ! Ce n'est pas juste une mise à jour, c'est une révolution. Avec cette version, vous pouvez organiser vos pages avec des tableaux et ajouter des formulaires interactifs. Le web devient un lieu où l'on peut entrer et interagir, et non seulement lire. Bienvenue dans l'ère de l'interaction !"
+      },
+  
+      "html_3.2": {
+        "nom": "HTML 3.2",
+        "elements": {
+          "button": {
+
+          }
+        },
+        "boost": 20,
+        "cout": 10000,
+        "borne": 5000,
+        "evolution":3,
+        "css_id": "t4.css",
+        "narration": "L'HTML 3.2 marque un tournant décisif dans l'histoire du web. Grâce à l'introduction de la balise `<img>`, vous pouvez désormais ajouter des images à vos pages ! Le web devient visuel et prend vie avec des images. Vous êtes sur le point de changer la façon dont les utilisateurs perçoivent Internet."
+      },
+  
+      "html_4.01": {
+        "nom": "HTML 4.01",
+        "elements": {
+          "button": {
+
+          }
+        },
+        "boost": 30,
+        "cout": 100000,
+        "borne": 50000,
+        "evolution":4,
+        "css_id": "t5.css",
+        "narration": "HTML 4.01 a ouvert la voie à une nouvelle ère de personnalisation du design web. L'ajout des feuilles de style CSS a permis de donner libre cours à la créativité. Vous avez désormais un contrôle total sur l'apparence de vos pages, et le web devient plus dynamique et élégant."
+      },
+  
+      "xhtml_4.01": {
+        "nom": "XHTML 4.01",
+        "elements": {
+          "button": {
+
+          }
+        },
+        "boost": 40,
+        "cout": 1000000,
+        "borne": 500000,
+        "evolution":5,
+        "css_id": "t6.css",
+        "narration": "XHTML 4.01 améliore encore la norme HTML, avec une plus grande rigueur et des règles de codage strictes. Vous commencez à créer des pages web plus robustes et accessibles, prêtes à supporter un contenu riche et diversifié. Le web devient plus stable et professionnel."
+      },
+  
+      "xhtml_1.0": {
+        "nom": "XHTML 1.0",
+        "elements": {
+          "button": {
+
+          }
+        },
+        "boost": 50,
+        "cout": 10000000,
+        "borne": 5000000,
+        "evolution":6,
+        "css_id": "t7.css",
+        "narration": "Avec XHTML 1.0, vous atteignez un nouveau niveau de qualité. Vous écrivez un code plus propre et plus cohérent, et l'expérience utilisateur s'en trouve améliorée. Les pages se chargent plus rapidement et sont plus fiables. La perfection est en marche !"
+      },
+  
+      "html_5": {
+        "nom": "HTML 5",
+        "elements": {
+          "button": {
+
+          }
+        },
+        "boost": 60,
+        "cout": 1000000000,
+        "borne": 50000000,
+        "evolution":7,
+        "css_id": "t8.css",
+        "narration": "L'HTML 5 débarque ! C'est l'arrivée des vidéos et de l'audio sur le web. Grâce à la balise `<video>`, vous pouvez intégrer des vidéos directement dans vos pages, et la balise `<audio>` permet de diffuser des sons. Vous redéfinissez l'expérience multimédia sur Internet."
+      },
+  
+      "xhtml_5": {
+        "nom": "XHTML 5",
+        "elements": {
+          "button": {
+
+          }
+        },
+        "boost": 70,
+        "cout": 10000000000,
+        "borne": 500000000,
+        "evolution":8,
+        "css_id": "t9.css",
+        "narration": "XHTML 5 vous permet d'aller encore plus loin dans l'interactivité. Grâce à l'introduction des balises HTML5, vous pouvez gérer des éléments multimédia comme des vidéos, des sons, et même des animations interactives avec le JavaScript intégré. Le web devient une plateforme riche et immersive, tout est possible !"
+      }
+    },
+    
+  "collegues": {
+    "ada_lovelace": {
+      "nom": "Ada Lovelace",
+      "cout": 15,
+      "revenu_passif": 0.1,
+      "evolution": 0,
+      "narration": "Ada Lovelace est considérée comme la première programmeuse de l'histoire. Elle a collaboré avec Charles Babbage sur la machine analytique et a écrit des notes qui contiennent l'algorithme destiné à être exécuté par la machine, un concept essentiel à la programmation moderne.",
+      "wikipedia": "https://fr.wikipedia.org/wiki/Ada_Lovelace",
+      "nom_fichier_image":"img/Ada_Byron_daguerreotype_by_Antoine_Claudet_1843_or_1850_-_cropped.png"
+    },
+    "george_boole": {
+      "nom": "George Boole",
+      "cout": 100,
+      "revenu_passif": 1,
+      "evolution": 0,
+      "narration": "George Boole était un mathématicien et logicien britannique, connu pour avoir formulé les bases de l'algèbre logique, un outil fondamental en informatique et en intelligence artificielle.",
+      "wikipedia": "https://fr.wikipedia.org/wiki/George_Boole",
+      "nom_fichier_image":"img/George_Boole_color.jpg"
+    },
+    "grace_hopper": {
+      "nom": "Grace Hopper",
+      "cout": 1100,
+      "revenu_passif": 8,
+      "evolution": 0,
+      "narration": "Grace Hopper était une informaticienne et contre-amiral de la marine américaine. Elle est connue pour ses travaux sur le développement du premier compilateur et pour avoir popularisé le terme 'bug' pour décrire un dysfonctionnement dans les programmes.",
+      "wikipedia": "https://fr.wikipedia.org/wiki/Grace_Hopper",
+      "nom_fichier_image":"img/390px-Commodore_Grace_M._Hopper,_USN_(covered).jpg"
+    },
+    "france_spence": {
+      "nom": "Frances V. Spence",
+      "cout": 6000,
+      "revenu_passif": 47,
+      "evolution": 1,
+      "narration": "Frances V. Spence est l'une des premières programmeuses pour l'ENIAC (le premier ordinateur numérique). Elle est considérée comme l'une des pionnières de l'histoire de la programmation informatique.",
+      "wikipedia": "https://fr.wikipedia.org/wiki/Frances_Spence",
+      "nom_fichier_image":"img/Frances_Bilas_Spence_feeding_punch_cards_into_ENIAC,_Feb_1946.png"
+    },
+    "claude_shannon": {
+      "nom": "Claude Shannon",
+      "cout": 10000,
+      "revenu_passif": 260,
+      "evolution": 1,
+      "narration": "Claude Shannon est considéré comme le père de la théorie de l'information. Ses travaux ont révolutionné les domaines de la communication et de l'informatique.",
+      "wikipedia": "https://fr.wikipedia.org/wiki/Claude_Shannon",
+      "nom_fichier_image":"img/ClaudeShannon_MFO3807.jpg"
+    },
+    "alan_turing": {
+      "nom": "Alan Turing",
+      "cout": 700000,
+      "revenu_passif": 1400,
+      "evolution": 1,
+      "narration": "Alan Turing était un mathématicien et cryptanalyste britannique, célèbre pour son travail sur la machine de Turing, une base fondamentale pour la conception des ordinateurs modernes.",
+      "wikipedia": "https://fr.wikipedia.org/wiki/Alan_Turing",
+      "nom_fichier_image":"img/Alan_Turing_(1912-1954)_in_1936_at_Princeton_University.jpg"
+    },
+    "maragaret_hamilton": {
+      "nom": "Margaret Hamilton",
+      "cout": 5000000,
+      "revenu_passif": 7800,
+      "evolution": 2,
+      "narration": "Margaret Hamilton est une informaticienne qui a dirigé l'équipe de développement logiciel pour la mission Apollo. Elle est connue pour avoir écrit le code qui a permis de poser l'homme sur la Lune.",
+      "wikipedia": "https://fr.wikipedia.org/wiki/Margaret_Hamilton_(scientifique)",
+      "nom_fichier_image":"img/330px-Margaret_Hamilton_-_restoration.jpg"
+    },
+    "tim_berners_lee": {
+      "nom": "Tim Berner-Lee",
+      "cout": 50000000,
+      "revenu_passif": 44000,
+      "evolution": 2,
+      "narration": "Tim Berners-Lee est l'inventeur du World Wide Web. Son travail a permis de rendre Internet accessible et compréhensible pour le grand public.",
+      "wikipedia": "https://fr.wikipedia.org/wiki/Tim_Berners-Lee",
+      "nom_fichier_image":"img/390px-Tim_Berners-Lee_closeup.jpg"
+    },
+    "dennis_ritchie": {
+      "nom": "Dennis Ritchie",
+      "cout": 70000000,
+      "revenu_passif": 260000,
+      "evolution": 2,
+      "narration": "Dennis Ritchie était un informaticien américain, co-créateur du langage de programmation C et du système d'exploitation UNIX, qui sont devenus des fondations de l'informatique moderne.",
+      "wikipedia": "https://fr.wikipedia.org/wiki/Dennis_Ritchie",
+      "nom_fichier_image":"img/390px-Dennis_Ritchie_2011.jpg"
+    },
+    "linus_torvald": {
+      "nom": "Linus Torvald",
+      "cout": 100000000,
+      "revenu_passif": 1600000,
+      "evolution": 3,
+      "narration": "Linus Torvalds est le créateur de Linux, un noyau de système d'exploitation open-source qui est devenu la base de nombreuses distributions utilisées dans des serveurs, des ordinateurs personnels et des appareils mobiles.",
+      "wikipedia": "https://fr.wikipedia.org/wiki/Linus_Torvalds",
+      "nom_fichier_image":"img/LinuxCon_Europe_Linus_Torvalds_03_(cropped).jpg"
+    }
+  }
+}
+  

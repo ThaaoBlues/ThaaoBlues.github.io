@@ -1,0 +1,37 @@
+/* t1.css - HTML */
+body {
+    font-family: Arial, sans-serif;
+    background-color: white;
+    color: black;
+    margin: 500;
+    padding: 20px;
+}
+
+
+
+button {
+    padding: 5px 15px;
+    border: 1px solid #000;
+    background-color: white;
+    cursor: pointer;
+}
+
+
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #000;
+}
+
+table.table-magasin{
+    width: 150px;
+    padding: 12px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+
+#table_magasin_collegues{
+    text-align: center;
+}

@@ -1,0 +1,139 @@
+/* t7.css - XHTML 1.0 - Représentation de la fin des années 2010 */
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f4f4f9;
+    color: #2c3e50;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+header {
+    background-color: #3498db;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+main {
+    max-width: 960px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+
+p {
+    margin-bottom: 20px;
+}
+
+button {
+    padding: 10px 25px;
+    font-size: 16px;
+    color: white;
+    background-color: #3498db;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+    background-color: #3e83b1;
+    transform: translateY(-2px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: #2980b9;
+}
+
+a:visited {
+    color: #3e83b1;
+}
+
+img {
+    max-width: 100%;
+    margin: 20px 0;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+table {
+    width: 100;
+    border-collapse: collapse;
+    margin: 20px 0;
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+table th, table td {
+    padding: 15px;
+    text-align: left;
+}
+
+table th {
+    background-color: #3498db;
+    color: white;
+    font-weight: bold;
+}
+
+table tr:nth-child(odd) {
+    background-color: #ecf0f1;
+}
+
+table tr:nth-child(even) {
+    background-color: #ffffff;
+}
+
+footer {
+    text-align: center;
+    padding: 10px ;    border-radius: 5px;
+
+    background-color: #2c3e50;
+    color: white;
+    margin-top: 40px;
+    font-size: 14px;
+}
+
+div.card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin: 20px 0;
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+div.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+
+div.score-button{
+    margin-top: 2vh;
+    margin-bottom: 2vh;
+    padding: 15px;
+    background-color: #2c3e50;
+    color: white;
+    font-weight: bolder;
+    font-size: xx-large;
+    width: 100;
+}

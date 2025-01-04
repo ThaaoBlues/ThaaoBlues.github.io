@@ -1,0 +1,80 @@
+
+body {
+    background-color: #ecf0f1;
+    color: #ddd;
+    margin: 0;
+    padding: 40px;
+    background-image: url(../img/matrix.gif), url(../img/codevert.jpg);
+}
+
+button {
+    padding: 12px 25px;
+    border: none;
+    background-color: #000000;
+    color: white;
+    cursor: pointer;
+    border-radius: 20px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #33ff00;
+}
+
+output {
+    font-size: 50px;
+    color: #ddd;
+    background-color: #000000;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 15px;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+
+    border: 1px solid #ddd;
+}
+
+th {
+    padding: 12px;
+    text-align: left;
+    border: 1px solid #ccc;
+    color: #ddd;
+    font-size: 20px;
+}
+td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+table.table-magasin{
+    width: 150px;
+    padding: 12px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+
+}
+
+
+@font-face {
+    font-family: "Comic Sans MS";
+    src: url("../font/comic-sans.woff") format("woff");
+}
+
+
+a{
+    color: #33ff00;
+   font-family: "Comic Sans MS";
+}
+
+a:visited{
+    color: #ffffff;
+}

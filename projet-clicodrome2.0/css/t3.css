@@ -1,0 +1,81 @@
+/* t3.css - HTML 2.0 */
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 30px;
+    background-image: url(../img/codevert.jpg);
+}
+
+
+
+button {
+    padding: 10px 20px;
+    border: none;
+    background-color: #000000;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    color: #ddd;
+    border-width: 2px;
+    border-style: dotted;
+    border-color: greenyellow;
+}
+
+button:hover {
+    background-color: #66ff00;
+}
+
+output {
+    color: #ddd;
+    font-size: 50px;
+
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #ccc;
+    color: #ddd;
+}
+th {   
+    font-size: 20px;
+
+}
+
+td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+div.ad{
+    visibility: visible;
+    display: block !important;
+    float: right;
+    width: 162px;
+    padding: 12px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #87bc44;
+    background: #e0ff92;
+    line-height: 1.2;
+    }
+div.ad.adt3{
+    visibility: visible;
+}
+
+table.table-magasin{
+    width: 150px;
+    padding: 12px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    
+}

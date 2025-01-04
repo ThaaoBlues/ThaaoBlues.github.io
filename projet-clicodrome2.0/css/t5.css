@@ -1,0 +1,72 @@
+/* t5.css - HTML 4.01 */
+body {
+    font-family: 'Helvetica Neue', sans-serif;
+    background-color: #fafafa;
+    
+    margin: 0;
+    padding: 50px;
+    background-image: url(../img/codevertmatrix.gif);
+}
+
+h1, h2, h3 {
+    color: #e74c3c;
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+output {
+    font-size: 50px;
+    color: #ddd;
+    background-color: #000000;
+}
+
+button {
+    padding: 15px 30px;
+    border: 2px solid #33ff00;
+    background-color: #ecf0f1;
+    color: #33ff00;
+    cursor: pointer;
+    border-radius: 25px;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #33ff00;
+    color: white;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #ecf0f1;
+    color: #ddd;
+}
+
+td, th {
+    padding: 15px;
+    text-align: left;
+    border: 1px solid #ecf0f1;
+}
+table.table-magasin{
+    color: #ddd;
+    width: 150px;
+    padding: 12px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+
+}
+a{
+    color: #33ff00;
+
+}
+a:visited{
+    color: #ffffff;
+}

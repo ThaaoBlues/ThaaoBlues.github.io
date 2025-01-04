@@ -1,0 +1,139 @@
+/* t9.css - XHTML 5 */
+body {
+    font-family: 'Montserrat', sans-serif;
+    background-color: #f4f4f9;
+    color: #2c3e50;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+output{
+    font-size: 30px;
+}
+
+main {
+    max-width: 960px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+button {
+    padding: 25px 20px;
+    border: none;
+    background-color: #e74c3c;
+    color: white;
+    cursor: pointer;
+    border-radius: 40px;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+button:hover {
+    background-color: #ff9900;
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+button:active {
+    transform: translateY(2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 25px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+table {
+    width: 100;
+    border-collapse: collapse;
+    border: 3px solid #ff9900;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: box-shadow 0.3s ease;
+    margin: 20px 0;
+}
+table:hover {
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+}
+
+td, th {
+    padding: 30px;
+    text-align: left;
+    border: 1px solid #ff9900;
+    font-size: 20px;
+    letter-spacing: 1px;
+}
+
+td {
+    background-color: #ecf0f1;
+}
+
+th {
+    background-color: #ff9900;
+    color: white;
+    text-transform: uppercase;
+}
+
+
+
+a{
+    color: #fda500;
+}
+
+a:visited{
+    color: #e74c3c;
+}
+
+
+div.score-button{
+    margin-top: 2vh;
+    margin-bottom: 2vh;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 15px;
+    background-color: #fda500;
+    color: white;
+    font-weight: bolder;
+    font-size: xx-large;
+    width: 100;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: box-shadow 0.3s ease;
+}
+div.score-button:hover {
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+}
+
+footer {
+    text-align: center;
+    padding: 10px ;    border-radius: 5px;
+
+    background-color: #fda500;
+    color: white;
+    margin-top: 40px;
+    font-size: 14px;
+}
+
+div.card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin: 20px 0;
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+div.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
