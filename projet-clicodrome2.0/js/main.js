@@ -24,7 +24,7 @@ async function remplirMagasinTechnologies(){
 
     const table= document.getElementById("table_magasin_technologies_body") 
 
-    let data = await fetch("../bdd/arbre.json")
+    let data = await fetch("./bdd/arbre.json")
     data = await data.json() 
 
 
@@ -103,7 +103,7 @@ async function remplirMagasinCollegues(){
 
     const table= document.getElementById("table_magasin_collegues_body") 
 
-    let data = await fetch("../bdd/arbre.json")
+    let data = await fetch("./bdd/arbre.json")
     data = await data.json() 
 
 
