@@ -56,8 +56,7 @@ td {
     border: 1px solid #ddd;
 }
 
-div.ad{
-    visibility: visible;
+.ad-vieux{
     display: block !important;
     float: right;
     width: 162px;
@@ -67,9 +66,10 @@ div.ad{
     border: 1px solid #87bc44;
     background: #e0ff92;
     line-height: 1.2;
-    }
-div.ad.adt3{
-    visibility: visible;
+}
+
+.ad-vieux .adt3{
+    display: block;
 }
 
 table.table-magasin{

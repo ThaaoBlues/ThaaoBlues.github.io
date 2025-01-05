@@ -3,9 +3,10 @@ body {
     font-family: 'Roboto', sans-serif;
     background-color: #f4f4f9;
     color: #333;
-    margin: 0;
-    padding: 0;
+    margin: 0px;
+    padding: 0px;
     line-height: 1.6;
+
 }
 
 main {
@@ -15,6 +16,7 @@ main {
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-height: 85vh;
 }
 
 output{
@@ -72,12 +74,7 @@ th {
 table tr:hover {
     background-color: #f1f1f1;
 }
-/* table.table_magasin{
-    width: 150px;
-    padding: 12px;
-    margin-top: 10px;
-    margin-bottom: 10px;
-} */
+
 
 a{
     color: #fda500;
@@ -89,24 +86,71 @@ a:visited{
 
 footer {
     text-align: center;
-    padding: 10px ;    border-radius: 5px;
-
-    background-color: #e74c3c;
+    align-items: center;
     color: white;
-    margin-top: 40px;
+    bottom: 0px !important;
+    position: fixed !important;
+    width: 100%;
+}
+
+footer p{
     font-size: 14px;
+    background-color: #e74c3c;
+    width: 76%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 1vh;
+    padding: 10px;    
+    border-radius: 5px;
 }
 
-div.card {
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    margin: 20px 0;
-    transition: transform 0.2s ease, box-shadow 0.3s ease;
+
+
+.ad-moderne-left {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 10vw;
+    height: fit-content;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+
 }
 
-div.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+.ad-moderne-right {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 10vw;
+    height: fit-content;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+.ad-container {
+    margin: 10px 0;
+    text-align: center;
+}
+
+.ad-moderne img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    z-index: 11;
+}
+
+.ad-moderne{
+    display: block !important;
 }

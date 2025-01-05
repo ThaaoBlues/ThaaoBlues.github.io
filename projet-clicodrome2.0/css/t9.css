@@ -19,6 +19,7 @@ main {
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-height: 50vw;
 }
 
 button {
@@ -83,8 +84,6 @@ th {
     text-transform: uppercase;
 }
 
-
-
 a{
     color: #fda500;
 }
@@ -116,24 +115,76 @@ div.score-button:hover {
 
 footer {
     text-align: center;
-    padding: 10px ;    border-radius: 5px;
-
-    background-color: #fda500;
     color: white;
-    margin-top: 40px;
+    width: 100%;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    bottom: 0px !important;
+    position: fixed !important;
+}
+
+footer p{
     font-size: 14px;
+    background-color: #fda500;
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 10px;    
+    border-radius: 5px;
+    margin-bottom: 1vh;
 }
 
-div.card {
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    margin: 20px 0;
-    transition: transform 0.2s ease, box-shadow 0.3s ease;
+
+
+/* Left Ads */
+.ad-moderne-left {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 10vw;
+    height: fit-content;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+
 }
 
-div.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+/* Right Ads */
+.ad-moderne-right {
+    margin-top: 20vw;
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 10vw;
+    height: fit-content;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+/* Ad Content */
+.ad-container {
+    margin: 10px 0;
+    text-align: center;
+}
+
+.ad-moderne img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    z-index: 11;
+}
+
+.ad-moderne{
+    display: block !important;
 }

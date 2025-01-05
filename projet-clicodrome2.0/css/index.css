@@ -87,3 +87,11 @@
     left:0%; 
     top: 0%;
 }
+
+.ad-vieux{
+    display: none;
+}
+
+.ad-moderne{
+    display: none;
+}
