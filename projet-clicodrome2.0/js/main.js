@@ -350,7 +350,7 @@ function rendreNombreLisible(n){
         ];
         // on enlève la virgule et la partie decimal pour ne pas 
         // fausser la longueur du string
-        const rpz_string = Number(n).toFixed(0)+"" 
+        const rpz_string = Math.trunc(score)+"" 
         // les qualificatifs étant par puissance de mille,
         // compte la puissance de 10 mais divisée par 3
         const puiss_mil = Math.floor((rpz_string.length-1)/3)
