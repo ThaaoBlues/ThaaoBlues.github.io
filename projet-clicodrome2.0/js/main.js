@@ -125,7 +125,7 @@ async function remplirMagasinCollegues(){
                 if(key in sacado){
                     exp = sacado[key]
                 }
-                const cout_reel = Number(collegue.cout * (1.1)**exp).toFixed(1)
+                const cout_reel = Number(collegue.cout * (1.1)**exp).toFixed(6)
                 
                 // ne laisse acheter que si on a l'argent
                 if(score >= cout_reel){
@@ -182,7 +182,7 @@ async function remplirMagasinCollegues(){
                     }
 
                     // on change le futur cout dans le tableau
-                    document.getElementById("case_cout_"+key).textContent = rendreNombreLisible(Number(collegue.cout * (1.1)**exp).toFixed(1))
+                    document.getElementById("case_cout_"+key).textContent = rendreNombreLisible(collegue.cout * (1.1)**exp)
 
 
                 }else{
@@ -212,7 +212,6 @@ async function remplirMagasinCollegues(){
 
 function majAffichageScore(){
     const score_aff = document.getElementById("score_affichage")
-    score = Number((score).toFixed(1))
     score_aff.textContent ="SCORE  : " + rendreNombreLisible(score)
 
 }
@@ -322,8 +321,8 @@ function genererConfetti() {
 
 
 function rendreNombreLisible(n){
-    let ret = n
 
+    let ret = n
     if(n>=1000000){
         const quantifiers = [
             "Million",         // 10^6
@@ -350,18 +349,26 @@ function rendreNombreLisible(n){
         ];
         // on enlève la virgule et la partie decimal pour ne pas 
         // fausser la longueur du string
-        const rpz_string = Math.trunc(score)+"" 
+        const partie_entiere = Math.trunc(n)
+        const rpz_string = partie_entiere+"" 
+
         // les qualificatifs étant par puissance de mille,
         // compte la puissance de 10 mais divisée par 3
         const puiss_mil = Math.floor((rpz_string.length-1)/3)
 
         // ici, on ne garde que jusqu'à la centaine de l'unité choisie
         // et on le met dans la variable de retour
-        ret = Number(n/(10**(3*puiss_mil))).toFixed(2)
+        // Obligé de mettre 6 chiffres de précision pour voir apparaitre
+        // des divisions à peu pres normales
+        let resultat = Number(partie_entiere/(10**(3*puiss_mil))).toFixed(6)
+        // On tronque le string après à la précision désirée
+        // ici, à 2 chiffres après la virgule
+        let tmp = String(resultat).split(".")
+        ret = tmp[0] + "," + tmp[1].substring(0,2)
 
         // enfin, on rajoute le quantificateur, avec un 's' si on est pas à l'unité
         let q = " "+ quantifiers[puiss_mil -2]
-        if(ret != 1){
+        if(resultat != 1){
             q +='s'
         }
 
