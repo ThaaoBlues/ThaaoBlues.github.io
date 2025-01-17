@@ -36,6 +36,8 @@ async function remplirMagasinTechnologies(){
         const t = new Technologie(tech[key])
 
         if( !sacado[key] && !magasin_tech[key] && (t.borne <= score) && (evolution_tech === parseInt(t.evolution))){
+            
+            ouvrirAlerte("Une nouvelle avancée technologique vient de voir le jour sur terre, elle arrive tout droit dans le magasin !!!")
             ouvrirAlerte(tech[key]["narration"])
 
             // met à jour le contenu du magasin
@@ -81,6 +83,14 @@ async function remplirMagasinTechnologies(){
 
                     }else{
                         boost += t.boost
+                    }
+
+
+                    // message de remerciements
+
+                    if(t.evolution == 8){
+                        ouvrirAlerte(" Merci d'avoir joué à ProgWeb-Legends !! :)")
+                        genererConfetti()
                     }
 
                 }else{
@@ -150,7 +160,7 @@ async function remplirMagasinCollegues(){
 
                             // narration comme c'est la première fois qu'on achète
 
-                            ouvrirAlerte("Vous avez débloqué "+ collegue.nom+" !!"+collegues[key]["narration"])
+                            ouvrirAlerte("Vous avez débloqué "+ collegue.nom+" !! "+collegues[key]["narration"])
                             ouvrirAlerte("Incrémentation de la rentabilité passive de "+collegue.revenu_passif+" points !!")
                             
                         }, (4000));
@@ -364,7 +374,7 @@ function rendreNombreLisible(n){
         // On tronque le string après à la précision désirée
         // ici, à 2 chiffres après la virgule
         let tmp = String(resultat).split(".")
-        ret = tmp[0] + "," + tmp[1].substring(0,2)
+        ret = tmp[0] + "." + tmp[1].substring(0,2)
 
         // enfin, on rajoute le quantificateur, avec un 's' si on est pas à l'unité
         let q = " "+ quantifiers[puiss_mil -2]
@@ -374,6 +384,8 @@ function rendreNombreLisible(n){
 
         ret += q
 
+    }else{
+        ret = Number(n).toFixed(2)
     }
 
     return ret

@@ -41,7 +41,7 @@
         "borne": 500,
         "evolution":2,
         "css_id": "t3.css",
-        "narration": "HTML 2.0 est arrivé ! Ce n'est pas juste une mise à jour, c'est une révolution. Avec cette version, vous pouvez organiser vos pages avec des tableaux et ajouter des formulaires interactifs. Le web devient un lieu où l'on peut entrer et interagir, et non seulement lire. Bienvenue dans l'ère de l'interaction !"
+        "narration": "L'HTML 2.0 marque un tournant décisif dans l'histoire du web. Grâce à l'introduction de la balise `<img>`, vous pouvez désormais ajouter des images à vos pages ! Le web devient visuel et prend vie avec des images. Vous êtes sur le point de changer la façon dont les utilisateurs perçoivent Internet."
       },
   
       "html_3.2": {
@@ -56,7 +56,7 @@
         "borne": 5000,
         "evolution":3,
         "css_id": "t4.css",
-        "narration": "L'HTML 3.2 marque un tournant décisif dans l'histoire du web. Grâce à l'introduction de la balise `<img>`, vous pouvez désormais ajouter des images à vos pages ! Le web devient visuel et prend vie avec des images. Vous êtes sur le point de changer la façon dont les utilisateurs perçoivent Internet."
+        "narration": "HTML 3.2 est arrivé ! Ce n'est pas juste une mise à jour, c'est une révolution. Avec cette version, vous pouvez organiser vos pages avec des tableaux et ajouter des formulaires interactifs. Le web devient un lieu où l'on peut entrer et interagir, et non seulement lire. Bienvenue dans l'ère de l'interaction !"
       },
   
       "html_4.01": {
@@ -71,11 +71,11 @@
         "borne": 50000,
         "evolution":4,
         "css_id": "t5.css",
-        "narration": "HTML 4.01 a ouvert la voie à une nouvelle ère de personnalisation du design web. L'ajout des feuilles de style CSS a permis de donner libre cours à la créativité. Vous avez désormais un contrôle total sur l'apparence de vos pages, et le web devient plus dynamique et élégant."
+        "narration": "HTML 4.01 a ouvert la voie à une nouvelle ère de personnalisation du design web. L'ajout des balises FIELDSET, LEGEND, et LABEL rend le web plus accessible et élégant."
       },
   
       "xhtml_4.01": {
-        "nom": "XHTML 4.01",
+        "nom": "XHTML 4.0", 
         "elements": {
           "button": {
 
@@ -86,7 +86,7 @@
         "borne": 500000,
         "evolution":5,
         "css_id": "t6.css",
-        "narration": "XHTML 4.01 améliore encore la norme HTML, avec une plus grande rigueur et des règles de codage strictes. Vous commencez à créer des pages web plus robustes et accessibles, prêtes à supporter un contenu riche et diversifié. Le web devient plus stable et professionnel."
+        "narration": "XHTML 4.0 améliore encore la norme HTML, avec une plus grande rigueur et des règles de codage strictes. Vous commencez à créer des pages web plus robustes, prêtes à supporter un contenu riche et diversifié. Le web devient plus stable et professionnel."
       },
   
       "xhtml_1.0": {
@@ -131,7 +131,7 @@
         "borne": 500000000,
         "evolution":8,
         "css_id": "t9.css",
-        "narration": "XHTML 5 vous permet d'aller encore plus loin dans l'interactivité. Grâce à l'introduction des balises HTML5, vous pouvez gérer des éléments multimédia comme des vidéos, des sons, et même des animations interactives avec le JavaScript intégré. Le web devient une plateforme riche et immersive, tout est possible !"
+        "narration": "XHTML5 est une variante syntaxique d'HTML5, conçue pour être conforme aux règles strictes du XML. Cela permet une syntaxe plus rigoureuse et cohérente, mais au prix d'une moindre tolérance aux erreurs. Bien qu'inclus dans les spécifications d'HTML5, XHTML5 n'a jamais été largement adopté, car ses contraintes ne justifiaient pas ses avantages pour la plupart des projets web. Vous vous concentrez donc sur l'elaboration de pages ultra-modernes et vos créations sont perçues comme une forme d'art."
       }
     },
     

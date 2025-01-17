@@ -58,8 +58,7 @@ td {
 
 .ad-vieux{
     display: block !important;
-    float: right;
-    width: 162px;
+    width: 150px;
     padding: 12px;
     margin-top: 10px;
     margin-bottom: 10px;
@@ -67,15 +66,14 @@ td {
     background: #e0ff92;
     line-height: 1.2;
 }
-
 .ad-vieux .adt3{
-    display: block;
+    display: none !important;
 }
-
 table.table-magasin{
     width: 150px;
     padding: 12px;
     margin-top: 10px;
     margin-bottom: 10px;
-    
+
 }
+

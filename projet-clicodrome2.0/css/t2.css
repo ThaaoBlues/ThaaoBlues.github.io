@@ -50,24 +50,3 @@ td, th {
     border: 8px solid #fc04fc;
 }
 
-
-.ad-vieux{
-    display: block !important;
-    width: 150px;
-    padding: 12px;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #87bc44;
-    background: #e0ff92;
-    line-height: 1.2;
-}
-.ad-vieux .adt3{
-    display: none !important;
-}
-table.table-magasin{
-    width: 150px;
-    padding: 12px;
-    margin-top: 10px;
-    margin-bottom: 10px;
-
-}

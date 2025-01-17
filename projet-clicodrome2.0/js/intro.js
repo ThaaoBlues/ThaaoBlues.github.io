@@ -27,7 +27,7 @@ function firstClick(){
 function pageChargee(){
     // fonction appelée au chargement de la page, initialise divers mécanismes du jeu
 
-    ouvrirAlerte("Bienvenue dans progWeb-Legends ! Un jeu des plus innovants basé sur le concept du click de souris :)")
+    ouvrirAlerte("Bienvenue dans ProgWeb-Legends ! Un jeu des plus innovants basé sur le concept du click de souris :)")
     firstClick()
     
 

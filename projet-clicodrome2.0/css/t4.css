@@ -64,6 +64,31 @@ table.table-magasin{
 }
 
 
+.ad-vieux{
+    display: block !important;
+    float: right;
+    width: 162px;
+    padding: 12px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #87bc44;
+    background: #e0ff92;
+    line-height: 1.2;
+}
+
+.ad-vieux .adt3{
+    display: block;
+}
+
+table.table-magasin{
+    width: 150px;
+    padding: 12px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    
+}
+
+
 @font-face {
     font-family: "Comic Sans MS";
     src: url("../font/comic-sans.woff") format("woff");
