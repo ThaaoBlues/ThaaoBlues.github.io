@@ -2,8 +2,16 @@
 
 ## I'm currently learning cryptography and making random projects ( not very well coded )
 
-School web programmation project :
+- School web programmation project :
 [ProWeb-Legends](https://thaaoblues.github.io/projet-clicodrome2.0)
+- WebNote - Markdown/HTML paper web editor with live svg drawing 
+[WebNote](https://thaaoblues.github.io/webnote)
+[Github](https://github.com/thaooblues/webnote)
+- Ecosys - Cross-platform decentralized airdrop and devices synchronization engine with integrated apps support
+[Ecosys](https://thaaoblues.github.io/webnote)
+[Github](https://github.com/thaooblues/ecosys)
+
+
 
 
 
