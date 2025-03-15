@@ -15,10 +15,17 @@ const markdownEditor = document.querySelector('.markdown-editor');
 const svgEditor = document.querySelector('.svg-editor');
 
 
-
 // first render with default markdown sheet
 window.addEventListener("DOMContentLoaded",function(){
     updateMarkdownOutput();
+
+    // geogebra api initialisation
+    //initGGBApplet()
+
+    // Fetch the components database and generate the menu on page load
+    fetchComponentsDB();
+
+    initImageImportButton();
 
 })
 let isDrawing = false;
@@ -106,14 +113,16 @@ expandCanvasButton.addEventListener('click', () => {
 // re-affiche le svg apres aggrandissement du canvas
 function redrawPaths() {
     ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-    ctx.beginPath();
+
     paths.forEach(path => {
+        ctx.beginPath();
         ctx.moveTo(path.x, path.y);
         for (let i = 1; i < path.length; i++) {
             ctx.lineTo(path[i].x, path[i].y);
         }
+        ctx.stroke();
+
     });
-    ctx.stroke();
 }
 
 function getCanvasCoords(event) {
@@ -153,12 +162,16 @@ function stopDrawing() {
     ctx.globalCompositeOperation = 'source-over';
 }
 
-markdownInput.addEventListener('input', updateMarkdownOutput);
-
 function updateMarkdownOutput() {
+    console.log("before parsing");
     const markdownText = markdownInput.value;
     markdownOutput.innerHTML = marked.parse(markdownText);
+    console.log("marked parsing");
 }
+
+markdownInput.addEventListener('input', updateMarkdownOutput);
+
+
 
 downloadMarkdown.addEventListener('click', () => {
     const markdownText = markdownInput.value;
@@ -172,14 +185,59 @@ downloadMarkdown.addEventListener('click', () => {
     document.body.removeChild(a);
 });
 
+
+/*replace all images sourced on a web URL to their base64 content representation*/
+async function replaceImageUrlsWithBase64() {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(markdownInput.value, 'text/html');
+    const images = doc.querySelectorAll('img[src^="http"]');
+
+    const canvas = document.getElementById("canvasImageSrcTransformation");
+    const ctx = canvas.getContext('2d');
+
+    for (const img of images) {
+        try {
+            const newImg = new Image();
+            newImg.crossOrigin = "anonymous"; // Allow cross-origin images
+            let src = encodeURIComponent(img.src);
+            newImg.src = `https://api.allorigins.win/get?url=${src}`;
+
+            newImg.onload = function () {
+                canvas.width = newImg.naturalWidth;
+                canvas.height = newImg.naturalHeight;
+                ctx.drawImage(newImg, 0, 0);
+                
+                let base64Image = canvas.toDataURL("image/png");
+                img.src = base64Image;
+                markdownInput.value = doc.body.innerHTML;
+            };
+
+            newImg.onerror = function () {
+                console.error(`Failed to load image: ${img.src}`);
+            };
+        } catch (error) {
+            console.error(`Error processing image ${img.src}:`, error);
+        }
+    }
+}
+
+
 downloadPDF.addEventListener('click', () => {
-    const { jsPDF } = window.jspdf;
+    /*const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     html2canvas(markdownOutput).then(canvas => {
         const imgData = canvas.toDataURL('image/png');
         doc.addImage(imgData, 'PNG', 10, 10);
         doc.save('document.pdf');
+    });*/
+
+    replaceImageUrlsWithBase64().then(()=>{
+        updateMarkdownOutput();
+        html2pdf(markdownOutput);
+
     });
+
+    
 });
 
 
@@ -201,6 +259,7 @@ function expandElement(element) {
 function collapseElement() {
     if (isExpanded && !ignoreClick) {
         markdownEditor.classList.remove('expanded');
+        markdownEditor.style = "flex-direction:column;"
         svgEditor.classList.remove('expanded');
         drawingCanvas.classList.remove("expanded")
         markdownInput.classList.remove("expanded");
@@ -219,16 +278,34 @@ function collapseElement() {
 
 
 markdownInput.addEventListener('focus', () =>{
-    expandElement(markdownEditor)
+    expandElement(markdownEditor);
+    // show the editor and output side by side in expanded view
+    markdownEditor.style = "flex-direction:row;"
 } );
 
+svgEditor.addEventListener('click', () => {
+    expandElement(svgEditor);
+});
+
+function checkIfnotChildOfExpanded(element){
+
+    var ret = false;
+
+    if(element.classList.contains("expanded")){
+        ret = true;
+    }else{
+        if(element.parentElement != null){
+            ret = checkIfnotChildOfExpanded(element.parentElement);
+        }
+    }
+
+    return ret;
+
+}
+
 document.addEventListener('click', (event) => {
-    console.log(event);
-    if (!(
-        event.target.classList.contains('expanded') || 
-        event.target.parentElement.classList.contains("expanded") ||
-        event.target.parentElement.parentElement.classList.contains("expanded")
-    )){
+    if (!checkIfnotChildOfExpanded(event.target)){
+
         collapseElement();
     }
 });
@@ -273,3 +350,187 @@ function insertSVG() {
     markdownInput.value += '\n' + markdownImage;
     updateMarkdownOutput();
 }
+
+
+/*IMAGE INSERTION*/
+
+function initImageImportButton(){
+    document.getElementById('importImageButton').addEventListener('click', () => {
+        document.getElementById('fileInput').click();
+    });
+    
+    document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+    
+}
+
+function handleFileSelect(event) {
+    const files_list = document.getElementById('fileInput').files;
+    for(i=0;i<files_list.length;i++){
+        const file = files_list[i];
+        console.log(file);
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgDataUrl = e.target.result;
+                const markdownImage = `<img alt="figure" src="${imgDataUrl}" width="595pt">`;
+                const markdownInput = document.getElementById('markdownInput');
+                markdownInput.value += '\n' + markdownImage;
+                updateMarkdownOutput();
+            };
+            reader.readAsDataURL(file);
+        } else {
+            alert('Please select a valid image file.');
+        }
+
+    };
+    
+}
+
+
+
+/*GEOGEBRA */
+
+
+var GGBApi;
+var parameters = {
+    "appName": "graphing",
+    "id": "ggb-element",
+    "width": 800,
+    "height": 600,
+    "showToolBar": true,
+    "showAlgebraInput": true,
+    "showMenuBar": true,
+    appletOnLoad(ggbApi) {
+        GGBApi = ggbApi;
+    }
+};
+
+function initGGBApplet(){
+    var GeoGebraApplet = new GGBApplet(parameters, true);
+    window.addEventListener("load", function() {
+        GeoGebraApplet.inject('ggb-element')
+    });
+
+
+    document.getElementById('export-svg-btn').addEventListener('click', async function() {
+        GGBApi.evalCommand('ExportImage("clipboard",true, "transparent", true)');
+
+        setTimeout(() => {
+            navigator.clipboard.readText().then((svgData)=>{
+                console.log(svgData);
+            });
+        }, 1000);
+
+    
+        const markdownImage = `<img alt="figure" src="${svgDataUrl}" width="595pt"> `;
+        const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgData)}`;
+        markdownInput.value += '\n' + markdownImage;
+        updateMarkdownOutput();
+    });
+}
+
+
+
+/*PREMADE COMPONENTS*/
+
+
+async function fetchComponentsDB() {
+    try {
+        const response = await fetch('/static/templates/components_db.json');
+        if (response.ok) {
+            const componentsDB = await response.json();
+            generateMenu(componentsDB);
+        } else {
+            console.error('Failed to fetch components database:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error fetching components database:', error);
+    }
+}
+
+function generateMenu(componentsDB) {
+    const menu = document.getElementById('menu');
+    
+    const typeDiv = document.createElement('div');
+    typeDiv.classList.add('menu-item');
+    typeDiv.innerText = "Composants";
+    typeDiv.onmouseover = () => showSubmenu(typeDiv);
+    menu.appendChild(typeDiv);
+
+    menu.onmouseleave = () => hideSubmenu(typeDiv);
+
+    const componentTypeSubmenu = document.createElement('div');
+    componentTypeSubmenu.classList.add('submenu');
+    typeDiv.appendChild(componentTypeSubmenu);
+
+    for (const componentType in componentsDB) {
+
+
+            const nameDiv = document.createElement('div');
+            nameDiv.classList.add('menu-item');
+            nameDiv.innerText = componentType;
+            nameDiv.onmouseover = () => showSubmenu(nameDiv);
+            nameDiv.onmouseout = () => hideSubmenu(nameDiv);
+            componentTypeSubmenu.appendChild(nameDiv);
+
+            const componentSubmenu = document.createElement('div');
+            componentSubmenu.classList.add('submenu');
+            nameDiv.appendChild(componentSubmenu);
+
+        for (const componentName in componentsDB[componentType]) {
+
+            const componentItem = document.createElement('div');
+            componentItem.classList.add('submenu-item');
+            componentItem.innerText = componentName;
+            componentItem.onclick = () => fetchComponent(
+                "static"+"/"+
+                "templates" +"/"+
+                componentType+"/"+
+                componentsDB[componentType][componentName]
+            );
+            componentSubmenu.appendChild(componentItem);
+
+            // close menu after click
+            toggleSubmenu(typeDiv);
+        }
+    }
+}
+
+function toggleSubmenu(menuItem) {
+    const submenu = menuItem.querySelector('.submenu');
+    if (submenu) {
+        submenu.style.display = submenu.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+function showSubmenu(menuItem) {
+    const submenu = menuItem.querySelector('.submenu');
+    if (submenu) {
+        submenu.style.display = 'block';
+    }
+}
+
+function hideSubmenu(menuItem) {
+    const submenu = menuItem.querySelector('.submenu');
+    if (submenu) {
+        submenu.style.display = 'none';
+    }
+}
+
+async function fetchComponent(url) {
+    try {
+        const response = await fetch(url);
+        if (response.ok) {
+            const content = await response.text();
+            markdownInput.value += '\n\n' + content;
+            updateMarkdownOutput();
+        } else {
+            console.error('Failed to fetch component:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error fetching component:', error);
+    }
+}
+
+
+
