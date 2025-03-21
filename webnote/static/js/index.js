@@ -13,6 +13,9 @@ const mainContainer = document.getElementById('mainContainer');
 const expandCanvasButton = document.getElementById('expandCanvasButton');
 const markdownEditor = document.querySelector('.markdown-editor');
 const svgEditor = document.querySelector('.svg-editor');
+const overlayEditor = document.getElementById('displayContent');
+
+
 
 
 // first render with default markdown sheet
@@ -26,6 +29,20 @@ window.addEventListener("DOMContentLoaded",function(){
     fetchComponentsDB();
 
     initImageImportButton();
+
+    initOverlayEditor();
+
+
+    // Set markdown options
+    marked.use({
+        async: false,
+        pedantic: false,
+        gfm: true,
+        breaks : true
+    });
+
+    hideDrawingCanvas();
+    displayMarkdownEditor();
 
 })
 let isDrawing = false;
@@ -163,13 +180,9 @@ function stopDrawing() {
 }
 
 function updateMarkdownOutput() {
-    console.log("before parsing");
     const markdownText = markdownInput.value;
     markdownOutput.innerHTML = marked.parse(markdownText);
-    console.log("marked parsing");
 }
-
-markdownInput.addEventListener('input', updateMarkdownOutput);
 
 
 
@@ -244,48 +257,11 @@ downloadPDF.addEventListener('click', () => {
 /* zoom sur l'éditeur quand on écris/dessine */
 
 // state of both markdown editor and canvas editor
-let isExpanded = false;
-let ignoreClick = false;
+
 
 function expandElement(element) {
-    if (!isExpanded) {
         element.classList.add('expanded');
-        isExpanded = true;
-        ignoreClick = true;
-        setTimeout(() => { ignoreClick = false; }, 200); // Small delay to prevent immediate collapse
-    }
 }
-
-function collapseElement() {
-    if (isExpanded && !ignoreClick) {
-        markdownEditor.classList.remove('expanded');
-        markdownEditor.style = "flex-direction:column;"
-        svgEditor.classList.remove('expanded');
-        drawingCanvas.classList.remove("expanded")
-        markdownInput.classList.remove("expanded");
-        markdownOutput.classList.remove("expanded");
-
-        // delay to prevent having expansion of an element while clicking to collapse another
-        setTimeout(() => {
-            isExpanded = false; 
-            // prevent focus to be made on markdown editor
-            // and by so having to unfocus and refocus it to zoom in it
-            // if we are coming from drawing canvas
-            markdownInput.blur();
-            }, 200);    
-    }
-}
-
-
-markdownInput.addEventListener('focus', () =>{
-    expandElement(markdownEditor);
-    // show the editor and output side by side in expanded view
-    markdownEditor.style = "flex-direction:row;"
-} );
-
-svgEditor.addEventListener('click', () => {
-    expandElement(svgEditor);
-});
 
 function checkIfnotChildOfExpanded(element){
 
@@ -303,19 +279,64 @@ function checkIfnotChildOfExpanded(element){
 
 }
 
-document.addEventListener('click', (event) => {
-    if (!checkIfnotChildOfExpanded(event.target)){
+function removeExpandedClass(element){
+    console.log("removing expanded class");
+    if(element.classList.contains("expanded")){
+        element.classList.remove("expanded");
+    }else{
+        if(element.parentElement != null){
+            removeExpandedClass(element.parentElement);
+        }
+    }
+}
 
-        collapseElement();
+
+// trigger drawing canvas on shift+draw
+document.addEventListener('keydown',(event)=>{
+
+
+    if(event.shiftKey && event.altKey && (svgEditor.style.display === "none")){
+        console.log("displaying drawing canvas");
+        hideMarkdownEditor();
+        displayDrawingCanvas();
     }
 });
 
+function displayDrawingCanvas(){
+    // collapse markdown editor
+    removeExpandedClass(markdownEditor);
+    svgEditor.removeAttribute("hidden");
+    svgEditor.style = "";
+    expandElement(svgEditor);
+}
 
+function displayMarkdownEditor(){
+    markdownEditor.style = "flex-direction:row;"
+    svgEditor.removeAttribute("hidden");
+    expandElement(markdownEditor);
+    
+}
+
+function hideDrawingCanvas(){
+    removeExpandedClass(svgEditor);
+    svgEditor.setAttribute("hidden",true);
+    svgEditor.style.display = "none";
+}
+function hideMarkdownEditor(){
+    markdownEditor.style = "flex-direction:column;"
+    markdownEditor.setAttribute("hidden",true)
+    removeExpandedClass(markdownEditor);
+}
 
 // svg insertion in markdown
 insertButton.addEventListener('click', insertSVG);
 
 function insertSVG() {
+    hideDrawingCanvas();
+    displayMarkdownEditor();
+
+
+
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', drawingCanvas.width);
     svg.setAttribute('height', drawingCanvas.height);
@@ -349,6 +370,9 @@ function insertSVG() {
     const markdownImage = `<img alt="figure" src="${svgDataUrl}" width="595pt"> `;
     markdownInput.value += '\n' + markdownImage;
     updateMarkdownOutput();
+
+    // as we added the svg inside the real editor and not displayed one
+    syncOverlayEditor();
 }
 
 
@@ -457,8 +481,14 @@ function generateMenu(componentsDB) {
     typeDiv.onmouseover = () => showSubmenu(typeDiv);
     menu.appendChild(typeDiv);
 
-    menu.onmouseleave = () => hideSubmenu(typeDiv);
+    menu.onmouseleave = () => {
+        // hide all submenus
+        hideSubmenu(typeDiv);
+        menu.querySelectorAll(".menu-item").forEach(element => {
+            hideSubmenu(element);
+        });
 
+    }
     const componentTypeSubmenu = document.createElement('div');
     componentTypeSubmenu.classList.add('submenu');
     typeDiv.appendChild(componentTypeSubmenu);
@@ -469,8 +499,7 @@ function generateMenu(componentsDB) {
             const nameDiv = document.createElement('div');
             nameDiv.classList.add('menu-item');
             nameDiv.innerText = componentType;
-            nameDiv.onmouseover = () => showSubmenu(nameDiv);
-            nameDiv.onmouseout = () => hideSubmenu(nameDiv);
+            nameDiv.onclick = () => showSubmenu(nameDiv);
             componentTypeSubmenu.appendChild(nameDiv);
 
             const componentSubmenu = document.createElement('div');
@@ -533,4 +562,104 @@ async function fetchComponent(url) {
 }
 
 
+// Better editor presentation, hiding image sources etc..
 
+
+// Function to hide image src and replace with placeholder
+function hideImageSrc(html) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const images = doc.querySelectorAll('img');
+    images.forEach((img, index) => {
+        const placeholder = document.createElement('img');
+        placeholder.id = `${index}`;
+        placeholder.classList.add('source-hidden-for-convenience');
+        placeholder.textContent = `Img ${index + 1}`;
+        img.parentNode.replaceChild(placeholder, img);
+    });
+    return doc.body.innerHTML;
+}
+
+// Function to restore image src
+function restoreImageSrc(html, originalHtml) {
+    const parser = new DOMParser();
+    html.replace("\n","<br>");
+    const doc = parser.parseFromString(html, 'text/html');
+    const originalDoc = parser.parseFromString(originalHtml, 'text/html');
+    const placeholders = doc.querySelectorAll('.source-hidden-for-convenience');
+    const originalImages = originalDoc.querySelectorAll('img');
+    console.log(originalImages);
+
+    let imgCount = doc.querySelectorAll("img").length;
+    // in case we write the image tag by hand, to let us write the source 
+    // before notifying the rest of the process
+    let nonFinishedImgCount = 0;
+    doc.querySelectorAll("img").forEach(element => {
+
+        /*
+        TODO : ça détécte quand meme toutes les nvelles balises,
+        faire en sorte que le check de src fonctionne
+        */
+        if(!(element.src === "" || element.src == NaN) && !element.classList.contains("source-hidden-for-convenience")){
+            console.log("NVELLE IMAGE");
+            nonFinishedImgCount ++;
+        }
+    });
+    imgCount = imgCount - nonFinishedImgCount;
+
+
+    placeholders.forEach((placeholder, index) => {
+        // do not edit newly inserted images
+        //console.log(`${placeholder.id} === ${index} ?`)
+        if (placeholder.id === `${index}`) {
+            //console.log("oui");
+            const img = document.createElement('img');
+            img.setAttribute('src', originalImages[index].getAttribute('src'));
+            doc.body.replaceChild(img, placeholder);
+        }
+    });
+
+
+    // removed images during the overlay modification
+    // are automatically deleted as we return the overlay content
+    // with the sources added
+
+
+    //console.log(html);
+    // return new html and if we have new images to reduce source from
+    // it also returns true if we removed images to avoid weird behaviors
+    return [doc.body.innerHTML,imgCount != originalImages.length];
+}
+
+function syncOverlayEditor(){
+    overlayEditor.textContent = hideImageSrc(markdownInput.value);
+
+}
+function initOverlayEditor(){
+
+    // Sync content from display to textarea on input
+    displayContent.addEventListener('input', () => {
+        const og_content = markdownInput.value;
+        const [new_content, newSourcesToHide] = restoreImageSrc(overlayEditor.innerText,og_content);
+        markdownInput.value = new_content;
+        
+        console.log(new_content);
+        updateMarkdownOutput();
+
+        if(newSourcesToHide){
+            syncOverlayEditor();
+        }
+    });
+
+    // Initial sync
+    syncOverlayEditor();
+}
+
+
+/* 
+PB : 
+- la maj de l'output est chelou, ça ne met plus en forme correctement (wtf ?)
+- il faut overlayEditor.textContent = hideImageSrc(markdownInput.value);
+ quand on détecte une nouvelle image
+- relou, le newsourcestouhide se trigger des qu'on ecris img, pas le temps de mettre la source
+*/
