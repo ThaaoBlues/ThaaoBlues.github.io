@@ -6,6 +6,8 @@ body, html {
     justify-content: center;
     align-items: center;
     background-color: #f0f0f0;
+    background-image: url("https://s1.qwant.com/thumbr/400x300/0/3/57c4768d84f383a51df252f01678b98e59c6776477b9ddfa04adca84b9d362/OIP.WzpKEuvxzYxnFQzJ3a9wrwAAAA.jpg?u=https%3A%2F%2Ftse.mm.bing.net%2Fth%2Fid%2FOIP.WzpKEuvxzYxnFQzJ3a9wrwAAAA%3Fpid%3DApi&q=0&b=1&p=0&a=0");
+    
 }
 
 .container {
@@ -32,7 +34,7 @@ body, html {
 .expanded {
     display: flex;
     position: fixed;
-    margin-top: 1vh;
+    margin-top: 1.3vh;
     width: 90vw !important;
     height: 82vh !important;
     top: 50%;
@@ -42,6 +44,7 @@ body, html {
     z-index: 10;
     box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.3);
     border-radius: 10px;
+    box-shadow: 10px 5px 5px red;
 }
 
 #markdownInputContainer{
@@ -124,13 +127,13 @@ body, html {
 }
 
 .navbar{
-    top: 0px;
+    top: 0.5vh;
     position: absolute;
     z-index: 10;
-    background-color: #888;
+    background-color: #d472d1;
     border-radius: 5px;
     padding: 5px;
-
+    box-shadow: 10px 5px 5px red;
 }
 
 
@@ -243,10 +246,14 @@ body, html {
     bottom: 2px;
     position: fixed;
     width: fit-content;
-    background-color: wheat;
+    background-color: #d472d1;
     border-radius: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;
     padding-left: 15px;
     padding-right: 15px;
+    box-shadow: 10px 5px 5px red;
+    margin-bottom: 1vh;
 }
 
 .workspace-tab{
@@ -279,12 +286,11 @@ body, html {
     cursor: pointer;
     background-color: #e0e0e0;
     text-align: center;
-    margin: auto;
-    margin-bottom: auto;
     height: fit-content;
     font-size: larger;
     font-weight: bolder;
-    padding: 5px;
+    padding-left: 2px;
+    padding-right: 2px;
 }
 
 #workspaceTabsContainer{
