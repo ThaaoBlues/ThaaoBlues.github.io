@@ -16,7 +16,7 @@ const svgEditor = document.querySelector('.svg-editor');
 const overlayEditor = document.getElementById('interactiveEditor');
 
 
-
+drawingMode = 'free';
 
 // first render with default markdown sheet
 window.addEventListener("DOMContentLoaded",function(){
@@ -153,6 +153,9 @@ expandCanvasButton.addEventListener('click', () => {
     redrawPaths();
 });
 
+
+let temporaryLine;
+
 // re-affiche le svg apres aggrandissement du canvas
 function redrawPaths() {
     ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
@@ -180,29 +183,78 @@ function startDrawing(event) {
     isDrawing = true;
     currentPath = [];
     const { x, y } = getCanvasCoords(event);
-    ctx.beginPath();
-    ctx.moveTo(x, y);
+    startPoint = { x, y }; // Store the starting point
     ctx.strokeStyle = isErasing ? '#ffffff' : currentColor;
     ctx.lineWidth = currentRadius;
     ctx.lineCap = 'round';
     currentPath.push({ x, y, type: 'move', color: ctx.strokeStyle, radius: ctx.lineWidth });
+
+    if (drawingMode === 'free') {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
 }
 
 function draw(event) {
     if (!isDrawing) return;
     const { x, y } = getCanvasCoords(event);
-    ctx.globalCompositeOperation = isErasing ? 'destination-out' : 'source-over';
-    ctx.lineWidth = isErasing ? currentRadius * 2 : currentRadius;
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    currentPath.push({ x, y, type: 'line', color: ctx.strokeStyle, radius: ctx.lineWidth });
+
+    if (drawingMode === 'free') {
+        ctx.globalCompositeOperation = isErasing ? 'destination-out' : 'source-over';
+        ctx.lineWidth = isErasing ? currentRadius * 2 : currentRadius;
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        currentPath.push({ x, y, type: 'line', color: ctx.strokeStyle, radius: ctx.lineWidth });
+    } else if (drawingMode === 'line') {
+        // Clear the previous temporary line
+        if (temporaryLine) {
+            ctx.putImageData(temporaryLine, 0, 0);
+        }
+
+        // Save the current canvas state
+        temporaryLine = ctx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
+
+        // Draw the temporary line
+        ctx.beginPath();
+        ctx.moveTo(startPoint.x, startPoint.y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.closePath();
+    }
 }
 
 function stopDrawing() {
+    if (!isDrawing) return;
     isDrawing = false;
+
+    if (drawingMode === 'line') {
+        const { x: endX, y: endY } = getCanvasCoords(event);
+
+        // Clear the temporary line
+        if (temporaryLine) {
+            ctx.putImageData(temporaryLine, 0, 0);
+            temporaryLine = null;
+        }
+
+        // Draw the final line
+        ctx.beginPath();
+        ctx.moveTo(startPoint.x, startPoint.y);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+        ctx.closePath();
+
+        currentPath.push({ x: endX, y: endY, type: 'line', color: ctx.strokeStyle, radius: ctx.lineWidth });
+    } else if (drawingMode === 'free') {
+        ctx.closePath();
+    }
+
     paths.push(currentPath);
-    ctx.closePath();
     ctx.globalCompositeOperation = 'source-over';
+}
+
+// Function to toggle drawing mode
+function toggleDrawingMode(mode) {
+    drawingMode = mode;
 }
 
 function updateMarkdownOutput(renderLatex=true) {
@@ -311,6 +363,20 @@ downloadPDF.addEventListener('click', () => {
     
 });
 
+
+
+document.getElementById("drawLineButton").addEventListener("click",(e)=>{
+    document.getElementById("freeDrawButton").removeAttribute("disabled");
+    e.target.setAttribute("disabled",true);
+    toggleDrawingMode('line');
+});
+
+document.getElementById("freeDrawButton").addEventListener("click",(e)=>{
+    document.getElementById("drawLineButton").removeAttribute("disabled");
+    e.target.setAttribute("disabled",true);
+
+    toggleDrawingMode('free');
+});
 
 /* zoom sur l'éditeur quand on écris/dessine */
 
