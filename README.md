@@ -1,10 +1,8 @@
 # Hi ! I'm ThaaoBlues, A French CS student as the National Institue of Applied Science (INSA) of Toulouse 🦊 :)
 
 ## I'm currently learning cryptography and making random projects ( not very well coded )
-
-- School web programmation project
+- [MY CV](https://thaaoblues.github.io/CV.html)
   
-[ProWeb-Legends](https://thaaoblues.github.io/projet-clicodrome2.0)
 - WebNote - Markdown/HTML paper web editor with live svg drawing (buggy, sandbox project)
   
 [WebNote](https://thaaoblues.github.io/webnote)
