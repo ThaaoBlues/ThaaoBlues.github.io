@@ -1,25 +1,24 @@
-# Hi ! I'm ThaaoBlues, A French CS student as the National Institue of Applied Science (INSA) of Toulouse 🦊 :)
+# Hi ! I'm Théo Mougnibas, A French CS student as the National Institue of Applied Science (INSA) of Toulouse 🦊 
 
-## I'm currently learning cryptography and making random projects ( not very well coded )
+## I'm slowly learning cryptography and making random projects ( not very well coded )
 - [MY CV](https://thaaoblues.github.io/CV.html)
   
+
+- Ecosys - Cross-platform decentralized airdrop and devices synchronization engine with integrated apps support
+
+
+[Ecosys](https://thaaoblues.github.io/ecosys)
+
+
+[Github](https://github.com/thaooblues/ecosys)
+
+
 - WebNote - Markdown/HTML paper web editor with live svg drawing (buggy, sandbox project)
   
 [WebNote](https://thaaoblues.github.io/webnote)
 
 
 [Github](https://github.com/thaooblues/webnote)
-
-
-- Ecosys - Cross-platform decentralized airdrop and devices synchronization engine with integrated apps support
-
-
-[Ecosys](https://thaaoblues.github.io/webnote)
-
-
-[Github](https://github.com/thaooblues/ecosys)
-
-
 
 
 
