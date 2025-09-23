@@ -1,7 +1,6 @@
-# Hi ! I'm Théo Mougnibas, A French CS student as the National Institue of Applied Science (INSA) of Toulouse 🦊 
+# Hi ! I'm Théo Mougnibas, A French CS student as the National Institute of Applied Science (INSA) of Toulouse 🦊 
 
 ## I'm slowly learning cryptography and making random projects ( not very well coded )
-- [MY CV](https://thaaoblues.github.io/CV.html)
   
 
 - Ecosys - Cross-platform decentralized airdrop and devices synchronization engine with integrated apps support
@@ -11,6 +10,16 @@
 
 
 [Github](https://github.com/thaooblues/ecosys)
+
+- Hola - Funny programming language with native multithreading support whose compiler ( targeting Sprockell processors ) is written entirely in Haskell
+
+
+ [Github](https://github.com/ThaaoBlues/compiler-construction-intregration-project)
+
+ - SketchyMusicShare - P2P music sharing website, made to stream and add songs to your friend's local playlist
+
+
+  [Github](https://github.com/ThaaoBlues/SketchyMusicShare)
 
 
 - WebNote - Markdown/HTML paper web editor with live svg drawing (buggy, sandbox project)
