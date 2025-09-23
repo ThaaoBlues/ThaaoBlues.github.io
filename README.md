@@ -14,12 +14,17 @@
 - Hola - Funny programming language with native multithreading support whose compiler ( targeting Sprockell processors ) is written entirely in Haskell
 
 
- [Github](https://github.com/ThaaoBlues/compiler-construction-intregration-project)
+[Github](https://github.com/ThaaoBlues/compiler-construction-intregration-project)
 
  - SketchyMusicShare - P2P music sharing website, made to stream and add songs to your friend's local playlist
 
 
-  [Github](https://github.com/ThaaoBlues/SketchyMusicShare)
+[Github](https://github.com/ThaaoBlues/SketchyMusicShare)
+
+- A cool decentrilized chat app made to run via sound waves ( and thus solving wireless networking problems )
+
+
+[Github](https://github.com/Strife-01/networking-project-chat-app)
 
 
 - WebNote - Markdown/HTML paper web editor with live svg drawing (buggy, sandbox project)
