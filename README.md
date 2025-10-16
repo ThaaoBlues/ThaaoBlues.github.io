@@ -10,12 +10,17 @@
 
 
 [Github](https://github.com/thaooblues/ecosys)
-___
+
+
+<hr>
+
 - Hola - Funny programming language with native multithreading support whose compiler ( targeting Sprockell processors ) is written entirely in Haskell
 
 
 [Github](https://github.com/ThaaoBlues/compiler-construction-intregration-project)
-___
+
+
+<hr>
  - SketchyMusicShare - P2P music sharing website, made to stream and add songs to your friend's local playlist
 
 
@@ -24,13 +29,14 @@ ___
 
 [Production(ish)-Website](https://thaaoblues.eu.pythonanywhere.com)
 
-___
+
+<hr>
 - (not named sorry) - A cool decentrilized chat app made to run via sound waves ( and thus solving wireless networking problems )
 
 
 [Github](https://github.com/Strife-01/networking-project-chat-app)
 
-___
+<hr>
 - WebNote - Markdown/HTML paper web editor with live svg drawing (buggy, sandbox project)
   
 [WebNote](https://thaaoblues.github.io/webnote)
