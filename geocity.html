@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoCity - Jeu de Déduction Géographique Tactique</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        radar: {
+                            bg: '#030712',
+                            card: '#0f172a',
+                            border: '#1e293b',
+                            cyan: '#06b6d4',
+                            emerald: '#10b981',
+                            amber: '#f59e0b',
+                            rose: '#f43f5e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        @keyframes radar-sweep {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .animate-sweep {
+            animation: radar-sweep 8s linear infinite;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+        .pulse-beacon {
+            animation: pulse-glow 2.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
+
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 border border-cyan-400/30">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" stroke-width="2"/>
+                        <circle cx="12" cy="12" r="4" stroke-width="2"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400">GEOCITY</h1>
+                    <p class="text-xs text-slate-400">Radar Tactique Mondial</p>
+                </div>
+            </div>
+
+            <div class="flex items-center flex-wrap gap-2 sm:gap-3">
+                <!-- Mode Selector (Classique vs Hardcore) -->
+                <div class="flex items-center bg-slate-950/90 p-1 rounded-xl border border-slate-800" title="Mode Classique : affiche le nom des 3 villes indices. Mode Hardcore : masque leur nom.">
+                    <button id="btn-mode-classic" onclick="setDifficultyMode('classic')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-cyan-500 text-slate-950 transition shadow-sm">
+                        Classique
+                    </button>
+                    <button id="btn-mode-hardcore" onclick="setDifficultyMode('hardcore')" class="px-2.5 py-1 text-xs font-medium rounded-lg text-slate-400 hover:text-white transition">
+                        Hardcore
+                    </button>
+                </div>
+
+                <button onclick="openRulesModal()" class="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 rounded-lg border border-slate-700/60 transition flex items-center space-x-1.5">
+                    <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="hidden sm:inline">Règles</span>
+                </button>
+                <button onclick="restartGame()" class="px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:text-black bg-cyan-950/60 hover:bg-cyan-400 rounded-lg border border-cyan-500/30 transition flex items-center space-x-1.5 shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    <span>Nouvelle Partie</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Loading Overlay while fetching global cities dataset -->
+    <div id="loading-overlay" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center transition-opacity duration-300">
+        <div class="relative w-20 h-20 mb-6 flex items-center justify-center">
+            <div class="absolute inset-0 rounded-full border-2 border-cyan-500/20"></div>
+            <div class="absolute inset-0 rounded-full border-t-2 border-cyan-400 animate-spin"></div>
+            <svg class="w-8 h-8 text-cyan-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke-width="1.5"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+            </svg>
+        </div>
+        <h2 class="text-lg font-bold text-white tracking-wide mb-1">Synchronisation Satellite...</h2>
+        <p id="loading-status" class="text-xs font-mono text-cyan-400">Téléchargement de la base de données mondiale (GeoNames / CDN)...</p>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left Column: Controls, Search, Stats & History -->
+        <section class="lg:col-span-5 flex flex-col space-y-6">
+            
+            <!-- Game Status & Scoreboard Card -->
+            <div class="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-5 shadow-xl relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-32 h-32 bg-cyan-500/5 rounded-full blur-2xl pointer-events-none"></div>
+                
+                <div class="flex items-center justify-between gap-2 mb-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <h2 class="text-sm font-semibold tracking-wide text-slate-300 uppercase">Cible Active</h2>
+                    </div>
+                    <div id="db-badge" class="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 px-2.5 py-1 rounded-full border border-cyan-800/50">
+                        Chargement...
+                    </div>
+                </div>
+
+                <!-- Search & Guess Form -->
+                <div class="relative mb-4" id="search-container">
+                    <label for="city-search" class="block text-xs font-medium text-slate-400 mb-1.5">Proposer une ville dans le monde :</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </span>
+                        <input type="text" id="city-search" autocomplete="off" placeholder="Rechercher parmi des milliers de villes..." 
+                            class="w-full pl-10 pr-10 py-3 bg-slate-950 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition">
+                        <button id="clear-search" onclick="clearSearchInput()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 hidden">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Autocomplete Suggestions Dropdown -->
+                    <div id="autocomplete-results" class="absolute z-20 left-0 right-0 mt-1.5 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-64 overflow-y-auto hidden divide-y divide-slate-800">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Game Stats Bar -->
+                <div class="grid grid-cols-3 gap-3 pt-2 border-t border-slate-800/80 text-center">
+                    <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                        <div class="text-[10px] text-slate-400 uppercase tracking-wider">Essais</div>
+                        <div id="stat-attempts" class="text-lg font-bold font-mono text-cyan-400">0</div>
+                    </div>
+                    <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                        <div class="text-[10px] text-slate-400 uppercase tracking-wider">Temps</div>
+                        <div id="stat-timer" class="text-lg font-bold font-mono text-amber-400">00:00</div>
+                    </div>
+                    <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                        <div class="text-[10px] text-slate-400 uppercase tracking-wider">Meilleure Dist.</div>
+                        <div id="stat-best-dist" class="text-sm sm:text-base font-bold font-mono text-emerald-400 pt-0.5">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History & Clues Table Card -->
+            <div class="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-5 shadow-xl flex-grow flex flex-col min-h-[340px]">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-semibold text-slate-300 tracking-wide flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <span>Vecteurs & Indices</span>
+                    </h3>
+                    <div class="flex items-center space-x-2">
+                        <button id="btn-sort-history" onclick="toggleHistorySort()" class="text-[11px] font-mono text-slate-300 hover:text-cyan-400 bg-slate-800/90 px-2 py-1 rounded-lg border border-slate-700 transition flex items-center space-x-1" title="Changer l'ordre de tri">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/>
+                            </svg>
+                            <span id="sort-label">Récent</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-y-auto max-h-[360px] flex-grow pr-1 space-y-3">
+                    <!-- Initial 3 Clues Section -->
+                    <div>
+                        <div class="text-[10px] font-mono uppercase tracking-wider text-indigo-400 mb-1.5 flex items-center justify-between">
+                            <span>3 Villes Indices (Départ)</span>
+                            <span id="clues-mode-tag" class="text-[10px] text-slate-500">Noms visibles</span>
+                        </div>
+                        <div id="clues-list" class="space-y-1.5">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- User Guesses Section -->
+                    <div class="pt-2 border-t border-slate-800/80">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-cyan-400">Vos Propositions</span>
+                            <span id="history-count" class="text-[11px] font-mono text-slate-400">0 essai</span>
+                        </div>
+                        <div id="history-list" class="space-y-2">
+                            <!-- Empty state -->
+                            <div id="empty-history" class="text-center py-6 text-slate-500 text-xs italic">
+                                Aucune proposition pour l'instant.<br>Analysez les 3 vecteurs initiaux et proposez une ville.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Column: Immersive Radar Display -->
+        <section class="lg:col-span-7 flex flex-col items-center">
+            <div class="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-5 sm:p-6 shadow-2xl w-full flex flex-col items-center relative overflow-hidden">
+                
+                <!-- Radar Header / Legend & Scale Switch -->
+                <div class="w-full flex flex-wrap items-center justify-between gap-2 mb-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></div>
+                        <h3 class="text-sm font-semibold text-slate-200 tracking-wide">Radar Géo-Spatial <span class="text-xs font-normal text-slate-400">(Centre = Cible)</span></h3>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <!-- Scale Toggle (Linear vs Logarithmic) -->
+                        <div class="flex items-center bg-slate-950 p-0.5 rounded-lg border border-slate-800 text-[11px]">
+                            <button id="btn-scale-linear" onclick="setRadarScale('linear')" class="px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 font-semibold transition">
+                                Linéaire
+                            </button>
+                            <button id="btn-scale-log" onclick="setRadarScale('log')" class="px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition">
+                                Log
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Legend bar -->
+                <div class="w-full flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 mb-3 px-1">
+                    <div class="flex items-center space-x-3">
+                        <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-indigo-400 inline-block"></span><span>Indices (3)</span></span>
+                        <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span><span>&lt; 800 km</span></span>
+                        <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span><span>&lt; 2500 km</span></span>
+                        <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-rose-400 inline-block"></span><span>Loin</span></span>
+                    </div>
+                    <span class="text-[10px] font-mono text-slate-500">Survolez un point pour les détails</span>
+                </div>
+
+                <!-- SVG Radar Container -->
+                <div id="radar-wrapper" class="relative w-full aspect-square max-w-[540px] flex items-center justify-center bg-slate-950/90 rounded-2xl border border-slate-800/80 p-3 shadow-inner select-none">
+                    
+                    <!-- Floating Hover Tooltip -->
+                    <div id="radar-tooltip" class="absolute z-30 pointer-events-none hidden bg-slate-900/95 border border-cyan-500/40 rounded-xl px-3 py-2 shadow-2xl backdrop-blur-md text-xs text-left min-w-[170px] transition-opacity duration-150">
+                        <div id="tt-title" class="font-bold text-white text-sm">Ville, Pays</div>
+                        <div id="tt-type" class="text-[10px] font-mono uppercase text-indigo-400 mb-1">Indice Initial</div>
+                        <div class="space-y-0.5 font-mono text-[11px] text-slate-300 border-t border-slate-800 pt-1">
+                            <div>Distance : <span id="tt-dist" class="text-cyan-400 font-semibold">0 km</span></div>
+                            <div>Azimut : <span id="tt-bearing" class="text-amber-400 font-semibold">NE 45°</span></div>
+                            <div id="tt-pop-row">Population : <span id="tt-pop" class="text-emerald-400 font-semibold">—</span></div>
+                            <div id="tt-coords" class="text-[10px] text-slate-500">48.85° N, 2.35° E</div>
+                        </div>
+                    </div>
+
+                    <!-- SVG Radar Graphic -->
+                    <svg id="radar-svg" class="w-full h-full overflow-visible" viewBox="-165 -165 330 330">
+                        <!-- Radar Background Glow -->
+                        <circle cx="0" cy="0" r="145" fill="#020617" stroke="#1e293b" stroke-width="1.5"/>
+                        <circle cx="0" cy="0" r="145" fill="url(#radarGrad)" opacity="0.35"/>
+                        
+                        <!-- Radial Gradients & Arrow Markers -->
+                        <defs>
+                            <radialGradient id="radarGrad" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.18"/>
+                                <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
+                            </radialGradient>
+                            <linearGradient id="sweepGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.35"/>
+                                <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- Concentric Distance Rings -->
+                        <circle cx="0" cy="0" r="36.25" fill="none" stroke="#334155" stroke-dasharray="2 2" stroke-width="0.7"/>
+                        <circle cx="0" cy="0" r="72.5" fill="none" stroke="#334155" stroke-dasharray="2 2" stroke-width="0.7"/>
+                        <circle cx="0" cy="0" r="108.75" fill="none" stroke="#334155" stroke-dasharray="2 2" stroke-width="0.7"/>
+                        <circle cx="0" cy="0" r="145" fill="none" stroke="#06b6d4" stroke-opacity="0.45" stroke-width="1.1"/>
+
+                        <!-- Ring Distance Labels -->
+                        <g id="radar-ring-labels" fill="#475569" font-size="6.5" font-family="JetBrains Mono" text-anchor="middle"></g>
+
+                        <!-- Crosshair Axes -->
+                        <line x1="-145" y1="0" x2="145" y2="0" stroke="#334155" stroke-width="0.8" stroke-dasharray="4 4"/>
+                        <line x1="0" y1="-145" x2="0" y2="145" stroke="#334155" stroke-width="0.8" stroke-dasharray="4 4"/>
+
+                        <!-- Cardinal Direction Labels -->
+                        <text x="0" y="-151" fill="#94a3b8" font-size="9.5" font-weight="bold" font-family="JetBrains Mono" text-anchor="middle">N</text>
+                        <text x="153" y="3" fill="#94a3b8" font-size="9.5" font-weight="bold" font-family="JetBrains Mono" text-anchor="middle">E</text>
+                        <text x="0" y="157" fill="#94a3b8" font-size="9.5" font-weight="bold" font-family="JetBrains Mono" text-anchor="middle">S</text>
+                        <text x="-153" y="3" fill="#94a3b8" font-size="9.5" font-weight="bold" font-family="JetBrains Mono" text-anchor="middle">O</text>
+
+                        <!-- Rotating Radar Sweep Line -->
+                        <g class="animate-sweep origin-center pointer-events-none">
+                            <line x1="0" y1="0" x2="0" y2="-145" stroke="url(#sweepGrad)" stroke-width="2"/>
+                        </g>
+
+                        <!-- Dynamic Vectors and Markers Layer -->
+                        <g id="radar-vectors-group">
+                            <!-- Injected dynamically via JS -->
+                        </g>
+
+                        <!-- Center Beacon (Secret City Marker) -->
+                        <g id="radar-center-beacon" class="pointer-events-none">
+                            <circle cx="0" cy="0" r="7" fill="#06b6d4" class="pulse-beacon"/>
+                            <circle cx="0" cy="0" r="3.5" fill="#ffffff"/>
+                            <text id="center-beacon-label" x="0" y="16" fill="#06b6d4" font-size="8" font-weight="bold" font-family="JetBrains Mono" text-anchor="middle">CIBLE SECRÈTE</text>
+                        </g>
+                    </svg>
+
+                </div>
+
+                <!-- Radar Footer / Scale Info -->
+                <div class="w-full mt-4 flex items-center justify-between text-xs text-slate-400 px-2">
+                    <div class="flex items-center space-x-1.5">
+                        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                        <span id="radar-scale-label" class="font-mono text-[11px]">Échelle max : 10 000 km</span>
+                    </div>
+                    <button id="btn-give-up" onclick="revealSecretCity()" class="text-rose-400 hover:text-rose-300 font-medium transition text-xs underline underline-offset-2">
+                        Abandonner &amp; Révéler
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-900/40 py-4 text-center text-xs text-slate-500">
+        GeoCity Tactique &bull; Base de données mondiale GeoNames / Open-Source &bull; Calculs géodésiques Haversine
+    </footer>
+
+    <!-- Victory / End-Game Modal -->
+    <div id="victory-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 sm:p-8 max-w-lg w-full shadow-2xl text-center max-h-[90vh] overflow-y-auto">
+            <div id="modal-icon-wrapper" class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-400">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            <h3 id="modal-title" class="text-xl font-bold text-white mb-1">Cible Découverte !</h3>
+            <p id="victory-message" class="text-slate-300 text-sm mb-5">Vous avez localisé avec succès la ville secrète.</p>
+            
+            <div class="bg-slate-950 rounded-xl p-4 mb-5 border border-slate-800 grid grid-cols-2 gap-3 text-left">
+                <div>
+                    <span class="block text-[10px] text-slate-400 uppercase">Ville Secrète</span>
+                    <span id="modal-secret-city" class="text-sm font-bold text-cyan-400">Tokyo, Japon</span>
+                </div>
+                <div>
+                    <span class="block text-[10px] text-slate-400 uppercase">Coordonnées GPS</span>
+                    <span id="modal-secret-coords" class="text-xs font-mono text-slate-300">35.68° N, 139.65° E</span>
+                </div>
+                <div>
+                    <span class="block text-[10px] text-slate-400 uppercase">Population</span>
+                    <span id="modal-secret-pop" class="text-xs font-mono text-cyan-300">—</span>
+                </div>
+                <div>
+                    <span class="block text-[10px] text-slate-400 uppercase">Performance</span>
+                    <span id="modal-attempts" class="text-sm font-bold font-mono text-emerald-400">4</span>
+                    <span class="text-xs text-slate-500 font-mono"> (<span id="modal-time" class="text-amber-400">01:24</span>)</span>
+                </div>
+            </div>
+
+            <!-- Recap of the 3 Initial Clues -->
+            <div class="bg-slate-950/70 rounded-xl p-3.5 mb-6 border border-slate-800/80 text-left">
+                <div class="text-[10px] font-mono uppercase tracking-wider text-indigo-400 mb-2">Récapitulatif des 3 Villes Indices</div>
+                <div id="modal-clues-recap" class="space-y-1.5 text-xs text-slate-300">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
+
+            <div class="flex space-x-3">
+                <button onclick="closeVictoryModal()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium rounded-xl transition text-sm border border-slate-700">
+                    Voir le Radar
+                </button>
+                <button onclick="restartGame()" class="flex-1 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-semibold rounded-xl shadow-lg shadow-cyan-500/20 transition text-sm">
+                    Nouvelle Partie
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules Modal -->
+    <div id="rules-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 sm:p-8 max-w-lg w-full shadow-2xl text-left">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Règles du Jeu GeoCity</span>
+                </h3>
+                <button onclick="closeRulesModal()" class="text-slate-400 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="space-y-3 text-sm text-slate-300 mb-6">
+                <p><strong>Principe :</strong> Une <strong class="text-cyan-400">ville secrète</strong> est choisie aléatoirement parmi une base de données mondiale de milliers de villes.</p>
+                <p><strong>Indices Initiaux :</strong> 3 villes aléatoires sont placées sur le radar. Leurs vecteurs partent du centre (la ville secrète) pour indiquer leur <strong>distance exacte</strong> et leur <strong>direction cardinale</strong>.</p>
+                <ul class="list-disc pl-5 space-y-1 text-xs text-slate-400">
+                    <li><strong class="text-cyan-300">Mode Classique :</strong> Le nom et le pays des 3 villes indices sont affichés directement sur le radar.</li>
+                    <li><strong class="text-amber-300">Mode Hardcore :</strong> Les noms des 3 indices sont masqués (<em>Indice #1, #2, #3</em>) pour une triangulation pure.</li>
+                </ul>
+                <p><strong>Propositions :</strong> À chaque essai, un nouveau vecteur coloré s'ajoute depuis le centre selon votre proximité :</p>
+                <ul class="list-disc pl-5 space-y-1 text-xs text-slate-400">
+                    <li><span class="text-emerald-400 font-semibold">Vert</span> : Très proche (&lt; 800 km)</li>
+                    <li><span class="text-amber-400 font-semibold">Orange / Jaune</span> : Distance modérée (800 - 2 500 km)</li>
+                    <li><span class="text-rose-400 font-semibold">Rouge</span> : Éloigné (&gt; 2 500 km)</li>
+                </ul>
+            </div>
+
+            <button onclick="closeRulesModal()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl transition text-sm border border-slate-700">
+                Compris, Jouons !
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- JavaScript Game Logic & Dynamic World Cities Database -->
+    <script>
+
+        TAILLE_POOL_AUTOCOMPLETE = 30000;
+        TAILLE_POOL_JEU = 1000;
+        // Country ISO Alpha-2 to French Name Mapping (for clean localization of open-source GeoNames datasets)
+        const COUNTRY_NAMES_FR = {
+            "AF": "Afghanistan", "ZA": "Afrique du Sud", "AL": "Albanie", "DZ": "Algérie", "DE": "Allemagne",
+            "AD": "Andorre", "AO": "Angola", "SA": "Arabie saoudite", "AR": "Argentine", "AM": "Arménie",
+            "AU": "Australie", "AT": "Autriche", "AZ": "Azerbaïdjan", "BS": "Bahamas", "BH": "Bahreïn",
+            "BD": "Bangladesh", "BB": "Barbade", "BE": "Belgique", "BZ": "Belize", "BJ": "Bénin",
+            "BT": "Bhoutan", "BY": "Biélorussie", "BO": "Bolivie", "BA": "Bosnie-Herzégovine", "BW": "Botswana",
+            "BR": "Brésil", "BN": "Brunei", "BG": "Bulgarie", "BF": "Burkina Faso", "BI": "Burundi",
+            "KH": "Cambodge", "CM": "Cameroun", "CA": "Canada", "CV": "Cap-Vert", "CL": "Chili",
+            "CN": "Chine", "CY": "Chypre", "CO": "Colombie", "KM": "Comores", "CG": "Congo",
+            "CD": "RD Congo", "KP": "Corée du Nord", "KR": "Corée du Sud", "CR": "Costa Rica", "CI": "Côte d'Ivoire",
+            "HR": "Croatie", "CU": "Cuba", "DK": "Danemark", "DJ": "Djibouti", "EG": "Égypte",
+            "AE": "Émirats arabes unis", "EC": "Équateur", "ER": "Érythrée", "ES": "Espagne", "EE": "Estonie",
+            "US": "États-Unis", "ET": "Éthiopie", "FJ": "Fidji", "FI": "Finlande", "FR": "France",
+            "GA": "Gabon", "GM": "Gambie", "GE": "Géorgie", "GH": "Ghana", "GR": "Grèce",
+            "GT": "Guatemala", "GN": "Guinée", "GQ": "Guinée équatoriale", "GW": "Guinée-Bissau", "GY": "Guyana",
+            "HT": "Haïti", "HN": "Honduras", "HK": "Hong Kong", "HU": "Hongrie", "IN": "Inde",
+            "ID": "Indonésie", "IQ": "Irak", "IR": "Iran", "IE": "Irlande", "IS": "Islande",
+            "IL": "Israël", "IT": "Italie", "JM": "Jamaïque", "JP": "Japon", "JO": "Jordanie",
+            "KZ": "Kazakhstan", "KE": "Kenya", "KG": "Kirghizistan", "KW": "Koweït", "LA": "Laos",
+            "LS": "Lesotho", "LV": "Lettonie", "LB": "Liban", "LR": "Liberia", "LY": "Libye",
+            "LI": "Liechtenstein", "LT": "Lituanie", "LU": "Luxembourg", "MO": "Macao", "MK": "Macédoine du Nord",
+            "MG": "Madagascar", "MY": "Malaisie", "MW": "Malawi", "MV": "Maldives", "ML": "Mali",
+            "MT": "Malte", "MA": "Maroc", "MU": "Maurice", "MR": "Mauritanie", "MX": "Mexique",
+            "MD": "Moldavie", "MC": "Monaco", "MN": "Mongolie", "ME": "Monténégro", "MZ": "Mozambique",
+            "MM": "Myanmar", "NA": "Namibie", "NP": "Népal", "NI": "Nicaragua", "NE": "Niger",
+            "NG": "Nigéria", "NO": "Norvège", "NZ": "Nouvelle-Zélande", "OM": "Oman", "UG": "Ouganda",
+            "UZ": "Ouzbékistan", "PK": "Pakistan", "PA": "Panama", "PG": "Papouasie-Nouvelle-Guinée", "PY": "Paraguay",
+            "NL": "Pays-Bas", "PE": "Pérou", "PH": "Philippines", "PL": "Pologne", "PT": "Portugal",
+            "PR": "Porto Rico", "QA": "Qatar", "RO": "Roumanie", "GB": "Royaume-Uni", "RU": "Russie",
+            "RW": "Rwanda", "SV": "Salvador", "SN": "Sénégal", "RS": "Serbie", "SL": "Sierra Leone",
+            "SG": "Singapour", "SK": "Slovaquie", "SI": "Slovénie", "SO": "Somalie", "SD": "Soudan",
+            "SS": "Soudan du Sud", "LK": "Sri Lanka", "SE": "Suède", "CH": "Suisse", "SR": "Suriname",
+            "SY": "Syrie", "TJ": "Tadjikistan", "TW": "Taïwan", "TZ": "Tanzanie", "TD": "Tchad",
+            "CZ": "République tchèque", "TH": "Thaïlande", "TL": "Timor oriental", "TG": "Togo", "TT": "Trinité-et-Tobago",
+            "TN": "Tunisie", "TM": "Turkménistan", "TR": "Turquie", "UA": "Ukraine", "UY": "Uruguay",
+            "VU": "Vanuatu", "VE": "Venezuela", "VN": "Viêt Nam", "YE": "Yémen", "ZM": "Zambie", "ZW": "Zimbabwe"
+        };
+
+        // Compact Fallback Database (only used if all external CDN fetches fail offline)
+        const FALLBACK_CITIES = [
+            { name: "Paris", country: "France", lat: 48.8566, lon: 2.3522, pop: 2140000 },
+            { name: "Tokyo", country: "Japon", lat: 35.6762, lon: 139.6503, pop: 13960000 },
+            { name: "New York", country: "États-Unis", lat: 40.7128, lon: -74.0060, pop: 8800000 },
+            { name: "Londres", country: "Royaume-Uni", lat: 51.5074, lon: -0.1278, pop: 8980000 },
+            { name: "Sydney", country: "Australie", lat: -33.8688, lon: 151.2093, pop: 5312000 },
+            { name: "Le Caire", country: "Égypte", lat: 30.0444, lon: 31.2357, pop: 9500000 },
+            { name: "Rio de Janeiro", country: "Brésil", lat: -22.9068, lon: -43.1729, pop: 6748000 },
+            { name: "Berlin", country: "Allemagne", lat: 52.5200, lon: 13.4050, pop: 3645000 },
+            { name: "Pékin", country: "Chine", lat: 39.9042, lon: 116.4074, pop: 21540000 },
+            { name: "Moscou", country: "Russie", lat: 55.7558, lon: 37.6173, pop: 12500000 },
+            { name: "Rome", country: "Italie", lat: 41.9028, lon: 12.4964, pop: 2873000 },
+            { name: "Madrid", country: "Espagne", lat: 40.4168, lon: -3.7038, pop: 3223000 },
+            { name: "Buenos Aires", country: "Argentine", lat: -34.6037, lon: -58.3816, pop: 3075000 },
+            { name: "Toronto", country: "Canada", lat: 43.6532, lon: -79.3832, pop: 2930000 },
+            { name: "Mexico", country: "Mexique", lat: 19.4326, lon: -99.1332, pop: 9209000 },
+            { name: "New Delhi", country: "Inde", lat: 28.6139, lon: 77.2090, pop: 16780000 },
+            { name: "Singapour", country: "Singapour", lat: 1.3521, lon: 103.8198, pop: 5686000 },
+            { name: "Dubaï", country: "Émirats arabes unis", lat: 25.2048, lon: 55.2708, pop: 3331000 },
+            { name: "Le Cap", country: "Afrique du Sud", lat: -33.9249, lon: 18.4241, pop: 4618000 },
+            { name: "Bangkok", country: "Thaïlande", lat: 13.7563, lon: 100.5018, pop: 10539000 },
+            { name: "Séoul", country: "Corée du Sud", lat: 37.5665, lon: 126.9780, pop: 9776000 },
+            { name: "Istanbul", country: "Turquie", lat: 41.0082, lon: 28.9784, pop: 15460000 },
+            { name: "Nairobi", country: "Kenya", lat: -1.2921, lon: 36.8219, pop: 4397000 },
+            { name: "Lima", country: "Pérou", lat: -12.0464, lon: -77.0428, pop: 9750000 },
+            { name: "Dakar", country: "Sénégal", lat: 14.7167, lon: -17.4677, pop: 1146000 },
+            { name: "Reykjavik", country: "Islande", lat: 64.1466, lon: -21.9426, pop: 131000 },
+            { name: "Montréal", country: "Canada", lat: 45.5017, lon: -73.5673, pop: 1780000 },
+            { name: "Toulouse", country: "France", lat: 43.6047, lon: 1.4442, pop: 493000 }
+        ];
+
+        // Dynamic Global Cities Stores
+        let ALL_CITIES_DB = [];       // Full dataset (up to ~25,000+ cities) for autocomplete search
+        let MAJOR_CITIES_POOL = [];   // Curated pool of ~2,500+ well-known / major world cities for secret target & clues
+
+        // Game State Variables
+        let secretCity = null;
+        let startingClues = [];
+        let attempts = [];
+        let startTime = null;
+        let timerInterval = null;
+        let elapsedTimeSeconds = 0;
+        let isGameOver = false;
+        let difficultyMode = 'classic'; // 'classic' (shows clue city names) | 'hardcore' (hides clue names as Indice #n)
+        let radarScaleMode = 'linear';  // 'linear' | 'log'
+        let historySortMode = 'recent'; // 'recent' | 'distance'
+
+        // Normalize string (remove diacritics & lowercase for accent-insensitive search)
+        function normalizeStr(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        }
+
+        function formatPopulation(pop) {
+            if (!pop || pop <= 0) return 'N/C';
+            if (pop >= 1000000) return `${(pop / 1000000).toFixed(2)} M hab.`;
+            return `${pop.toLocaleString('fr-FR')} hab.`;
+        }
+
+        // Load Real Global Cities Database with Explicit Population Data
+        async function loadGlobalCitiesDatabase() {
+            const statusEl = document.getElementById('loading-status');
+            const sources = [
+                {
+                    name: "GeoNames Cities15000 (CDN jsDelivr)",
+                    url: "https://cdn.jsdelivr.net/gh/lmfmaier/cities-json@master/cities15000.json",
+                    parser: (data) => data.map(item => ({
+                        name: item.name,
+                        countryCode: item.country,
+                        country: COUNTRY_NAMES_FR[item.country] || item.country,
+                        lat: parseFloat(item.lat),
+                        lon: parseFloat(item.lon || item.lng),
+                        pop: parseInt(item.pop || item.population || 0, 10)
+                    }))
+                },
+                {
+                    name: "GeoNames Cities500 (CDN jsDelivr)",
+                    url: "https://raw.githubusercontent.com/lmfmaier/cities-json/refs/heads/master/cities500.json",
+                    parser: (data) => data.map(item => ({
+                        name: item.name,
+                        countryCode: item.country,
+                        country: COUNTRY_NAMES_FR[item.country] || item.country,
+                        lat: parseFloat(item.lat),
+                        lon: parseFloat(item.lon || item.lng),
+                        pop: parseInt(item.pop || item.population || 0, 10)
+                    }))
+                },
+                {
+                    name: "GitHub World Cities 15k (Raw)",
+                    url: "https://raw.githubusercontent.com/lmfmaier/cities-json/master/cities15000.json",
+                    //url:"https://cdn.jsdelivr.net/npm/cities.json@1.1.45/cities.json",
+                    parser: (data) => data.map(item => ({
+                        name: item.name,
+                        countryCode: item.country,
+                        country: COUNTRY_NAMES_FR[item.country] || item.country,
+                        lat: parseFloat(item.lat),
+                        lon: parseFloat(item.lon || item.lng),
+                        pop: parseInt(item.pop || item.population || 0, 10)
+                    }))
+                }
+            ];
+
+            let loadedRaw = null;
+
+            for (const src of sources) {
+                try {
+                    statusEl.innerText = `Connexion à ${src.name}...`;
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+                    const response = await fetch(src.url, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) continue;
+                    const json = await response.json();
+                    if (Array.isArray(json) && json.length > 500) {
+                        const parsed = src.parser(json);
+                        // Verify that population metadata is genuinely present in this dataset
+                        const hasValidPopulation = parsed.slice(0, 50).some(c => c.pop > 10000);
+                        if (!hasValidPopulation) continue;
+
+                        statusEl.innerText = `Tri par population de ${parsed.length.toLocaleString('fr-FR')} villes mondiales...`;
+                        loadedRaw = parsed;
+                        break;
+                    }
+                } catch (err) {
+                    console.warn(`Source ${src.name} indisponible :`, err);
+                }
+            }
+
+            if (loadedRaw && loadedRaw.length > 500) {
+                // 1. Deduplicate same city+country keeping the entry with the highest population
+                const seen = new Map();
+                for (const c of loadedRaw) {
+                    if (!c.name || isNaN(c.lat) || isNaN(c.lon)) continue;
+                    const key = `${c.name.toLowerCase()}|${c.countryCode}`;
+                    const existing = seen.get(key);
+                    if (!existing || (c.pop || 0) > (existing.pop || 0)) {
+                        c.searchKey = normalizeStr(`${c.name} ${c.country}`);
+                        seen.set(key, c);
+                    }
+                }
+
+                // 2. Sort the ENTIRE worldwide dataset by descending population BEFORE slicing anything
+                const uniqueCities = Array.from(seen.values());
+                uniqueCities.sort((a, b) => (b.pop || 0) - (a.pop || 0));
+
+                // 3. Keep top 30,000 cities sorted by population for instant autocomplete search
+                ALL_CITIES_DB = uniqueCities.slice(0, TAILLE_POOL_AUTOCOMPLETE
+                );
+
+                // 4. Select the top 1,000 most populous global metropolises for secret cities & clues
+                MAJOR_CITIES_POOL = ALL_CITIES_DB.slice(0, TAILLE_POOL_JEU);
+
+                document.getElementById('db-badge').innerText = `Base : ${ALL_CITIES_DB.length.toLocaleString('fr-FR')} villes (Top 1000 cibles)`;
+            } else {
+                // Offline fallback sorted by descending population
+                ALL_CITIES_DB = [...FALLBACK_CITIES]
+                    .sort((a, b) => (b.pop || 0) - (a.pop || 0))
+                    .map(c => ({
+                        ...c,
+                        searchKey: normalizeStr(`${c.name} ${c.country}`)
+                    }));
+                MAJOR_CITIES_POOL = [...ALL_CITIES_DB];
+                document.getElementById('db-badge').innerText = `Mode Secours (${ALL_CITIES_DB.length} villes)`;
+                showToast("Mode hors-ligne : base de données locale chargée.", "warning");
+            }
+
+            // Hide loading overlay smoothly
+            const overlay = document.getElementById('loading-overlay');
+            overlay.classList.add('opacity-0');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+
+            initGame();
+        }
+
+        // Math & Geodesy Functions
+        function toRad(deg) { return deg * Math.PI / 180; }
+        function toDeg(rad) { return rad * 180 / Math.PI; }
+
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth radius in km
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return Math.round(R * c);
+        }
+
+        function calculateBearing(lat1, lon1, lat2, lon2) {
+            const φ1 = toRad(lat1), φ2 = toRad(lat2);
+            const Δλ = toRad(lon2 - lon1);
+            const y = Math.sin(Δλ) * Math.cos(φ2);
+            const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+            let brng = toDeg(Math.atan2(y, x));
+            return (brng + 360) % 360;
+        }
+
+        function getCompassInfo(bearing) {
+            const directions = [
+                { name: "Nord", arrow: "↑", code: "N" },
+                { name: "Nord-Nord-Est", arrow: "↗", code: "NNE" },
+                { name: "Nord-Est", arrow: "↗", code: "NE" },
+                { name: "Est-Nord-Est", arrow: "→", code: "ENE" },
+                { name: "Est", arrow: "→", code: "E" },
+                { name: "Est-Sud-Est", arrow: "↘", code: "ESE" },
+                { name: "Sud-Est", arrow: "↘", code: "SE" },
+                { name: "Sud-Sud-Est", arrow: "↓", code: "SSE" },
+                { name: "Sud", arrow: "↓", code: "S" },
+                { name: "Sud-Sud-Ouest", arrow: "↙", code: "SSO" },
+                { name: "Sud-Ouest", arrow: "↙", code: "SO" },
+                { name: "Ouest-Sud-Ouest", arrow: "←", code: "OSO" },
+                { name: "Ouest", arrow: "←", code: "O" },
+                { name: "Ouest-Nord-Ouest", arrow: "↖", code: "ONO" },
+                { name: "Nord-Ouest", arrow: "↖", code: "NO" },
+                { name: "Nord-Nord-Ouest", arrow: "↑", code: "NNO" }
+            ];
+            const index = Math.round((bearing % 360) / 22.5) % 16;
+            return directions[index];
+        }
+
+        function getProximityDetails(distance) {
+            if (distance <= 150) return { color: '#10b981', badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30', label: 'Brûlant' };
+            if (distance <= 800) return { color: '#34d399', badgeClass: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20', label: 'Très Proche' };
+            if (distance <= 2500) return { color: '#f59e0b', badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30', label: 'Modéré' };
+            if (distance <= 6000) return { color: '#f97316', badgeClass: 'bg-orange-500/10 text-orange-400 border-orange-500/30', label: 'Éloigné' };
+            return { color: '#f43f5e', badgeClass: 'bg-rose-500/10 text-rose-400 border-rose-500/30', label: 'Très Éloigné' };
+        }
+
+        function formatCoords(lat, lon) {
+            const latDir = lat >= 0 ? 'N' : 'S';
+            const lonDir = lon >= 0 ? 'E' : 'O';
+            return `${Math.abs(lat).toFixed(2)}° ${latDir}, ${Math.abs(lon).toFixed(2)}° ${lonDir}`;
+        }
+
+        // Toggle Difficulty Mode (Classique vs Hardcore)
+        function setDifficultyMode(mode) {
+            difficultyMode = mode;
+            const btnClassic = document.getElementById('btn-mode-classic');
+            const btnHardcore = document.getElementById('btn-mode-hardcore');
+            const modeTag = document.getElementById('clues-mode-tag');
+
+            if (mode === 'classic') {
+                btnClassic.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-cyan-500 text-slate-950 transition shadow-sm';
+                btnHardcore.className = 'px-2.5 py-1 text-xs font-medium rounded-lg text-slate-400 hover:text-white transition';
+                modeTag.innerText = 'Noms visibles';
+            } else {
+                btnHardcore.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 text-slate-950 transition shadow-sm';
+                btnClassic.className = 'px-2.5 py-1 text-xs font-medium rounded-lg text-slate-400 hover:text-white transition';
+                modeTag.innerText = 'Noms masqués (Hardcore)';
+            }
+
+            updateCluesUI();
+            renderRadar();
+        }
+
+        // Toggle Radar Scale (Linear vs Logarithmic)
+        function setRadarScale(scale) {
+            radarScaleMode = scale;
+            const btnLin = document.getElementById('btn-scale-linear');
+            const btnLog = document.getElementById('btn-scale-log');
+
+            if (scale === 'linear') {
+                btnLin.className = 'px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 font-semibold transition';
+                btnLog.className = 'px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition';
+            } else {
+                btnLog.className = 'px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 font-semibold transition';
+                btnLin.className = 'px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition';
+            }
+
+            renderRadar();
+        }
+
+        // Toggle History Sort (Recent vs Closest Distance)
+        function toggleHistorySort() {
+            historySortMode = historySortMode === 'recent' ? 'distance' : 'recent';
+            document.getElementById('sort-label').innerText = historySortMode === 'recent' ? 'Récent' : 'Distance';
+            updateHistoryUI();
+        }
+
+        // Initialize Game
+        function initGame() {
+            if (MAJOR_CITIES_POOL.length === 0) return;
+
+            isGameOver = false;
+            attempts = [];
+            elapsedTimeSeconds = 0;
+            clearInterval(timerInterval);
+
+            // Select random secret city from major world cities
+            const randomIndex = Math.floor(Math.random() * MAJOR_CITIES_POOL.length);
+            secretCity = MAJOR_CITIES_POOL[randomIndex];
+
+            // Select 3 well-distributed random starting clues from major cities
+            let availableForClues = MAJOR_CITIES_POOL.filter(c => c.name !== secretCity.name);
+            startingClues = [];
+            for (let i = 0; i < 3; i++) {
+                if (availableForClues.length === 0) break;
+                // Pick 5 candidates and choose the one with best angular separation from existing clues
+                let bestCandidate = null;
+                let bestScore = -1;
+                for (let k = 0; k < 6; k++) {
+                    const idx = Math.floor(Math.random() * availableForClues.length);
+                    const cand = availableForClues[idx];
+                    const candBearing = calculateBearing(secretCity.lat, secretCity.lon, cand.lat, cand.lon);
+                    let minAngleDiff = 360;
+                    for (const existing of startingClues) {
+                        const diff = Math.abs(((candBearing - existing.bearing + 540) % 360) - 180);
+                        if (diff < minAngleDiff) minAngleDiff = diff;
+                    }
+                    if (minAngleDiff > bestScore) {
+                        bestScore = minAngleDiff;
+                        bestCandidate = cand;
+                    }
+                }
+                const dist = haversineDistance(secretCity.lat, secretCity.lon, bestCandidate.lat, bestCandidate.lon);
+                const bearing = calculateBearing(secretCity.lat, secretCity.lon, bestCandidate.lat, bestCandidate.lon);
+                const compass = getCompassInfo(bearing);
+                startingClues.push({
+                    city: bestCandidate,
+                    distance: dist,
+                    bearing: bearing,
+                    compass: compass
+                });
+                availableForClues = availableForClues.filter(c => c.name !== bestCandidate.name);
+            }
+
+            // Start timer
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+
+            // Reset UI
+            document.getElementById('city-search').value = '';
+            document.getElementById('city-search').disabled = false;
+            document.getElementById('victory-modal').classList.add('hidden');
+            document.getElementById('stat-attempts').innerText = '0';
+            document.getElementById('stat-timer').innerText = '00:00';
+            document.getElementById('stat-best-dist').innerText = '—';
+            document.getElementById('center-beacon-label').textContent = 'CIBLE SECRÈTE';
+            document.getElementById('btn-give-up').classList.remove('hidden');
+
+            updateCluesUI();
+            updateHistoryUI();
+            renderRadar();
+        }
+
+        function updateTimer() {
+            if (isGameOver) return;
+            elapsedTimeSeconds = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = String(Math.floor(elapsedTimeSeconds / 60)).padStart(2, '0');
+            const seconds = String(elapsedTimeSeconds % 60).padStart(2, '0');
+            document.getElementById('stat-timer').innerText = `${minutes}:${seconds}`;
+        }
+
+        // Update the 3 Initial Clues List in the Sidebar
+        function updateCluesUI() {
+            const cluesList = document.getElementById('clues-list');
+            cluesList.innerHTML = '';
+
+            startingClues.forEach((clue, idx) => {
+                const showRealName = (difficultyMode === 'classic' || isGameOver);
+                const displayTitle = showRealName ? `${clue.city.name}` : `Indice #${idx + 1}`;
+                const displayCountry = showRealName ? `(${clue.city.country})` : `(Ville masquée)`;
+
+                const row = document.createElement('div');
+                row.className = 'bg-indigo-950/25 border border-indigo-500/25 rounded-xl px-3 py-2 flex items-center justify-between text-xs';
+                row.innerHTML = `
+                    <div class="flex items-center space-x-2 min-w-0">
+                        <span class="w-2 h-2 rounded-full bg-indigo-400 shrink-0"></span>
+                        <span class="font-semibold text-indigo-200 truncate">${displayTitle}</span>
+                        <span class="text-[11px] text-slate-400 truncate">${displayCountry}</span>
+                    </div>
+                    <div class="flex items-center space-x-2 font-mono shrink-0 ml-2">
+                        <span class="text-indigo-300 font-semibold">${clue.distance.toLocaleString('fr-FR')} km</span>
+                        <span class="text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded text-[10px]">${clue.compass.arrow} ${clue.compass.code}</span>
+                    </div>
+                `;
+                cluesList.appendChild(row);
+            });
+        }
+
+        // Compute Radar Radius for a Given Distance
+        function computeScaledRadius(dist, maxDist, maxSvgRadius) {
+            if (dist <= 0) return 0;
+            if (radarScaleMode === 'log') {
+                // Smooth logarithmic scaling to better separate nearby cities
+                const ratio = Math.log10(1 + dist) / Math.log10(1 + maxDist);
+                return Math.min(maxSvgRadius, ratio * maxSvgRadius);
+            }
+            return Math.min(maxSvgRadius, (dist / maxDist) * maxSvgRadius);
+        }
+
+        // Tooltip Helpers
+        function showRadarTooltip(evt, title, typeLabel, dist, bearing, compass, coords, popText) {
+            const tooltip = document.getElementById('radar-tooltip');
+            const wrapper = document.getElementById('radar-wrapper');
+            const rect = wrapper.getBoundingClientRect();
+
+            document.getElementById('tt-title').innerText = title;
+            document.getElementById('tt-type').innerText = typeLabel;
+            document.getElementById('tt-dist').innerText = `${dist.toLocaleString('fr-FR')} km`;
+            document.getElementById('tt-bearing').innerText = `${compass.code} (${Math.round(bearing)}°) ${compass.arrow}`;
+            document.getElementById('tt-pop').innerText = popText || 'N/C';
+            document.getElementById('tt-coords').innerText = coords;
+
+            tooltip.classList.remove('hidden');
+
+            let left = evt.clientX - rect.left + 14;
+            let top = evt.clientY - rect.top - 14;
+
+            if (left + 195 > rect.width) left = evt.clientX - rect.left - 200;
+            if (top + 125 > rect.height) top = rect.height - 130;
+            if (top < 8) top = 8;
+
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${top}px`;
+        }
+
+        function hideRadarTooltip() {
+            document.getElementById('radar-tooltip').classList.add('hidden');
+        }
+
+        // Render Radar SVG Vectors & Points
+        function renderRadar() {
+            const svgGroup = document.getElementById('radar-vectors-group');
+            const ringLabelsGroup = document.getElementById('radar-ring-labels');
+            svgGroup.innerHTML = '';
+            ringLabelsGroup.innerHTML = '';
+
+            // Compute max distance among clues and attempts to scale radar dynamically
+            let maxDist = 4000;
+            startingClues.forEach(clue => {
+                if (clue.distance > maxDist) maxDist = clue.distance;
+            });
+            attempts.forEach(att => {
+                if (att.distance > maxDist) maxDist = att.distance;
+            });
+
+            // Add 10% margin buffer
+            maxDist = Math.ceil((maxDist * 1.1) / 100) * 100;
+            document.getElementById('radar-scale-label').innerText = `Rayon max : ${maxDist.toLocaleString('fr-FR')} km (${radarScaleMode === 'linear' ? 'Linéaire' : 'Logarithmique'})`;
+
+            const maxSvgRadius = 132;
+
+            // Update subtle ring distance markers along the North-East axis
+            [0.25, 0.5, 0.75].forEach(frac => {
+                const ringR = 145 * frac;
+                const dVal = radarScaleMode === 'linear'
+                    ? Math.round(maxDist * frac)
+                    : Math.round(Math.pow(10, frac * Math.log10(1 + maxDist)) - 1);
+                const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                lbl.setAttribute('x', '2');
+                lbl.setAttribute('y', -ringR + 8);
+                lbl.setAttribute('text-anchor', 'start');
+                lbl.textContent = `${(dVal / 1000).toFixed(1)}k`;
+                ringLabelsGroup.appendChild(lbl);
+            });
+
+            // 1. Render 3 Starting Clues (Indigo dashed vectors)
+            startingClues.forEach((clue, idx) => {
+                const dist = clue.distance;
+                const bearing = clue.bearing;
+                const angleRad = toRad(bearing - 90);
+                const r = computeScaledRadius(dist, maxDist, maxSvgRadius);
+                const x = r * Math.cos(angleRad);
+                const y = r * Math.sin(angleRad);
+
+                const showRealName = (difficultyMode === 'classic' || isGameOver);
+                const cityLabel = showRealName ? `${clue.city.name}` : `Indice #${idx + 1}`;
+                const fullTooltipTitle = showRealName ? `${clue.city.name}, ${clue.city.country}` : `Indice #${idx + 1} (Mode Hardcore)`;
+                const coordsText = showRealName ? formatCoords(clue.city.lat, clue.city.lon) : 'Coordonnées masquées';
+                const popText = showRealName ? formatPopulation(clue.city.pop) : 'Masquée';
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'cursor-pointer transition-opacity hover:opacity-100');
+
+                // Vector line from center (secret city) to clue city
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', '0');
+                line.setAttribute('y1', '0');
+                line.setAttribute('x2', x);
+                line.setAttribute('y2', y);
+                line.setAttribute('stroke', '#818cf8');
+                line.setAttribute('stroke-width', '1.3');
+                line.setAttribute('stroke-dasharray', '3 3');
+                line.setAttribute('opacity', '0.75');
+
+                // Marker dot
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', x);
+                circle.setAttribute('cy', y);
+                circle.setAttribute('r', '4.5');
+                circle.setAttribute('fill', '#818cf8');
+                circle.setAttribute('stroke', '#ffffff');
+                circle.setAttribute('stroke-width', '1');
+
+                // Label (displays real city name in Classic mode!)
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', x + (x >= 0 ? 6 : -6));
+                text.setAttribute('y', y + (y >= 0 ? 4 : -2));
+                text.setAttribute('fill', '#c7d2fe');
+                text.setAttribute('font-size', '7.5');
+                text.setAttribute('font-weight', '600');
+                text.setAttribute('font-family', 'JetBrains Mono');
+                text.setAttribute('text-anchor', x >= 0 ? 'start' : 'end');
+                text.textContent = `${cityLabel} (${dist.toLocaleString('fr-FR')} km)`;
+
+                g.addEventListener('mousemove', (e) => showRadarTooltip(e, fullTooltipTitle, `Indice Initial #${idx + 1}`, dist, bearing, clue.compass, coordsText, popText));
+                g.addEventListener('mouseleave', hideRadarTooltip);
+
+                g.appendChild(line);
+                g.appendChild(circle);
+                g.appendChild(text);
+                svgGroup.appendChild(g);
+            });
+
+            // 2. Render User Attempts (solid colored vectors)
+            attempts.forEach((att, idx) => {
+                const dist = att.distance;
+                const bearing = att.bearing;
+                const angleRad = toRad(bearing - 90);
+                const r = computeScaledRadius(dist, maxDist, maxSvgRadius);
+                const x = r * Math.cos(angleRad);
+                const y = r * Math.sin(angleRad);
+                const colorInfo = getProximityDetails(dist);
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'cursor-pointer');
+
+                // Vector line from center
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', '0');
+                line.setAttribute('y1', '0');
+                line.setAttribute('x2', x);
+                line.setAttribute('y2', y);
+                line.setAttribute('stroke', colorInfo.color);
+                line.setAttribute('stroke-width', idx === 0 ? '2.2' : '1.6');
+                line.setAttribute('opacity', idx === 0 ? '1' : '0.85');
+
+                // Marker dot
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', x);
+                circle.setAttribute('cy', y);
+                circle.setAttribute('r', idx === 0 ? '5.5' : '4.5');
+                circle.setAttribute('fill', colorInfo.color);
+                circle.setAttribute('stroke', '#ffffff');
+                circle.setAttribute('stroke-width', '1.2');
+
+                // Label
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', x + (x >= 0 ? 7 : -7));
+                text.setAttribute('y', y + (y >= 0 ? 4 : -2));
+                text.setAttribute('fill', colorInfo.color);
+                text.setAttribute('font-size', '8');
+                text.setAttribute('font-weight', 'bold');
+                text.setAttribute('font-family', 'JetBrains Mono');
+                text.setAttribute('text-anchor', x >= 0 ? 'start' : 'end');
+                text.textContent = `${att.city.name} (${dist.toLocaleString('fr-FR')} km)`;
+
+                g.addEventListener('mousemove', (e) => showRadarTooltip(
+                    e,
+                    `${att.city.name}, ${att.city.country}`,
+                    `Essai #${att.attemptNumber}`,
+                    dist,
+                    bearing,
+                    att.compass,
+                    formatCoords(att.city.lat, att.city.lon),
+                    formatPopulation(att.city.pop)
+                ));
+                g.addEventListener('mouseleave', hideRadarTooltip);
+
+                g.appendChild(line);
+                g.appendChild(circle);
+                g.appendChild(text);
+                svgGroup.appendChild(g);
+            });
+        }
+
+        // Handle Guess Submission (accepts either a city object directly or a string query)
+        function makeGuess(cityOrName) {
+            if (isGameOver) return;
+
+            let matchedCity = null;
+            if (typeof cityOrName === 'object' && cityOrName !== null) {
+                matchedCity = cityOrName;
+            } else {
+                const normQuery = normalizeStr(cityOrName.trim());
+                matchedCity = ALL_CITIES_DB.find(c => normalizeStr(c.name) === normQuery);
+            }
+
+            if (!matchedCity) {
+                showToast(`La ville "${cityOrName}" est introuvable dans la base de données.`, "error");
+                return;
+            }
+
+            // Check if already guessed
+            if (attempts.some(a => a.city.name === matchedCity.name && a.city.country === matchedCity.country)) {
+                showToast(`Vous avez déjà proposé ${matchedCity.name} (${matchedCity.country}) !`, "warning");
+                return;
+            }
+
+            // Calculate distance and bearing relative to secret city
+            const distance = haversineDistance(secretCity.lat, secretCity.lon, matchedCity.lat, matchedCity.lon);
+            const bearing = calculateBearing(secretCity.lat, secretCity.lon, matchedCity.lat, matchedCity.lon);
+            const compass = getCompassInfo(bearing);
+            const proximity = getProximityDetails(distance);
+
+            const attemptData = {
+                attemptNumber: attempts.length + 1,
+                city: matchedCity,
+                distance: distance,
+                bearing: bearing,
+                compass: compass,
+                proximity: proximity
+            };
+
+            attempts.unshift(attemptData);
+            document.getElementById('stat-attempts').innerText = attempts.length;
+
+            // Update best distance indicator
+            const minDist = Math.min(...attempts.map(a => a.distance));
+            document.getElementById('stat-best-dist').innerText = `${minDist.toLocaleString('fr-FR')} km`;
+
+            renderRadar();
+            updateHistoryUI();
+            document.getElementById('city-search').value = '';
+            document.getElementById('autocomplete-results').classList.add('hidden');
+            document.getElementById('clear-search').classList.add('hidden');
+
+            // Check victory condition (exact city match or within 10 km)
+            const isExactMatch = (matchedCity.name === secretCity.name && matchedCity.country === secretCity.country) || distance <= 10;
+            if (isExactMatch) {
+                triggerVictory(false);
+            } else {
+                showToast(`${matchedCity.name} : ${distance.toLocaleString('fr-FR')} km (${compass.name} ${compass.arrow})`, distance <= 800 ? "success" : "info");
+            }
+        }
+
+        // Update History UI Table
+        function updateHistoryUI() {
+            const listEl = document.getElementById('history-list');
+            const countEl = document.getElementById('history-count');
+            
+            countEl.innerText = `${attempts.length} essai${attempts.length > 1 ? 's' : ''}`;
+
+            if (attempts.length === 0) {
+                listEl.innerHTML = `
+                    <div id="empty-history" class="text-center py-6 text-slate-500 text-xs italic">
+                        Aucune proposition pour l'instant.<br>Analysez les 3 vecteurs initiaux et proposez une ville.
+                    </div>
+                `;
+                return;
+            }
+
+            const sortedAttempts = [...attempts];
+            if (historySortMode === 'distance') {
+                sortedAttempts.sort((a, b) => a.distance - b.distance);
+            }
+
+            listEl.innerHTML = '';
+            sortedAttempts.forEach((att) => {
+                const item = document.createElement('div');
+                item.className = 'bg-slate-950/80 border border-slate-800/80 rounded-xl p-3 flex items-center justify-between transition hover:border-slate-700';
+                
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3 min-w-0">
+                        <span class="text-xs font-mono font-bold text-slate-500 w-6 shrink-0">#${att.attemptNumber}</span>
+                        <div class="min-w-0">
+                            <div class="text-sm font-semibold text-white flex items-center space-x-1.5 truncate">
+                                <span class="truncate">${att.city.name}</span>
+                                <span class="text-[11px] text-slate-400 font-normal truncate">(${att.city.country})</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-xs text-slate-400 mt-0.5">
+                                <span class="font-mono font-semibold text-cyan-400">${att.distance.toLocaleString('fr-FR')} km</span>
+                                <span>&bull;</span>
+                                <span class="flex items-center space-x-1">
+                                    <span class="font-bold text-slate-200">${att.compass.arrow}</span>
+                                    <span>${att.compass.name} (${Math.round(att.bearing)}°)</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="shrink-0 ml-2">
+                        <span class="text-[10px] font-medium px-2.5 py-1 rounded-full border ${att.proximity.badgeClass}">
+                            ${att.proximity.label}
+                        </span>
+                    </div>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        // Victory / End-Game Modal Trigger
+        function triggerVictory(wasSurrendered = false) {
+            isGameOver = true;
+            clearInterval(timerInterval);
+            document.getElementById('city-search').disabled = true;
+            document.getElementById('btn-give-up').classList.add('hidden');
+            document.getElementById('center-beacon-label').textContent = secretCity.name.toUpperCase();
+
+            // Reveal clue names even if played in Hardcore mode
+            updateCluesUI();
+            renderRadar();
+
+            const minutes = String(Math.floor(elapsedTimeSeconds / 60)).padStart(2, '0');
+            const seconds = String(elapsedTimeSeconds % 60).padStart(2, '0');
+            const timeStr = `${minutes}:${seconds}`;
+
+            const iconWrap = document.getElementById('modal-icon-wrapper');
+            if (wasSurrendered) {
+                iconWrap.className = 'w-16 h-16 bg-rose-500/10 border border-rose-500/30 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-400';
+                iconWrap.innerHTML = `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/></svg>`;
+                document.getElementById('modal-title').innerText = 'Partie Abandonnée';
+                document.getElementById('victory-message').innerText = `La ville secrète à trouver était ${secretCity.name} (${secretCity.country}).`;
+            } else {
+                iconWrap.className = 'w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-400';
+                iconWrap.innerHTML = `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`;
+                document.getElementById('modal-title').innerText = 'Cible Découverte !';
+                document.getElementById('victory-message').innerText = `Félicitations ! Vous avez localisé ${secretCity.name} en ${attempts.length} essai${attempts.length > 1 ? 's' : ''}.`;
+            }
+
+            document.getElementById('modal-secret-city').innerText = `${secretCity.name}, ${secretCity.country}`;
+            document.getElementById('modal-secret-coords').innerText = formatCoords(secretCity.lat, secretCity.lon);
+            document.getElementById('modal-secret-pop').innerText = formatPopulation(secretCity.pop);
+            document.getElementById('modal-attempts').innerText = attempts.length;
+            document.getElementById('modal-time').innerText = timeStr;
+
+            // Populate clues recap
+            const recapEl = document.getElementById('modal-clues-recap');
+            recapEl.innerHTML = startingClues.map((c, i) => `
+                <div class="flex items-center justify-between border-b border-slate-800/60 pb-1 last:border-0 last:pb-0">
+                    <span><strong class="text-indigo-300">#${i + 1}</strong> ${c.city.name}, ${c.city.country}</span>
+                    <span class="font-mono text-slate-400">${c.distance.toLocaleString('fr-FR')} km (${c.compass.code})</span>
+                </div>
+            `).join('');
+
+            document.getElementById('victory-modal').classList.remove('hidden');
+        }
+
+        function closeVictoryModal() {
+            document.getElementById('victory-modal').classList.add('hidden');
+        }
+
+        // Reveal Secret City on Give Up
+        function revealSecretCity() {
+            if (isGameOver) return;
+            triggerVictory(true);
+        }
+
+        // Autocomplete Search Logic across the Entire Loaded Dataset
+        const searchInput = document.getElementById('city-search');
+        const autocompleteResults = document.getElementById('autocomplete-results');
+        const clearSearchBtn = document.getElementById('clear-search');
+
+        searchInput.addEventListener('input', function(e) {
+            const rawQuery = e.target.value.trim();
+            const query = normalizeStr(rawQuery);
+            if (query.length > 0) {
+                clearSearchBtn.classList.remove('hidden');
+            } else {
+                clearSearchBtn.classList.add('hidden');
+                autocompleteResults.classList.add('hidden');
+                return;
+            }
+
+            // Prioritize prefix matches first, then substring matches
+            const prefixMatches = [];
+            const subMatches = [];
+            for (let i = 0; i < ALL_CITIES_DB.length; i++) {
+                const c = ALL_CITIES_DB[i];
+                const normName = normalizeStr(c.name);
+                if (normName.startsWith(query)) {
+                    prefixMatches.push(c);
+                } else if (c.searchKey.includes(query)) {
+                    subMatches.push(c);
+                }
+                if (prefixMatches.length >= 8 && subMatches.length >= 4) break;
+            }
+
+            const matches = [...prefixMatches, ...subMatches].slice(0, 8);
+
+            if (matches.length === 0) {
+                autocompleteResults.innerHTML = `<div class="p-3 text-xs text-slate-500 italic">Aucune ville correspondante</div>`;
+                autocompleteResults.classList.remove('hidden');
+                return;
+            }
+
+            autocompleteResults.innerHTML = '';
+            matches.forEach(city => {
+                const div = document.createElement('div');
+                div.className = 'px-4 py-2.5 hover:bg-slate-800/90 cursor-pointer flex items-center justify-between transition text-sm';
+                div.innerHTML = `
+                    <div class="flex flex-col min-w-0 pr-2">
+                        <span class="font-medium text-white truncate">${city.name}</span>
+                        <span class="text-[10px] text-slate-500 font-mono">${formatPopulation(city.pop)}</span>
+                    </div>
+                    <span class="text-xs text-slate-400 font-mono shrink-0">${city.country}</span>
+                `;
+                div.addEventListener('click', function() {
+                    searchInput.value = city.name;
+                    autocompleteResults.classList.add('hidden');
+                    makeGuess(city);
+                });
+                autocompleteResults.appendChild(div);
+            });
+            autocompleteResults.classList.remove('hidden');
+        });
+
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const query = searchInput.value.trim();
+                if (query) {
+                    autocompleteResults.classList.add('hidden');
+                    makeGuess(query);
+                }
+            }
+        });
+
+        function clearSearchInput() {
+            searchInput.value = '';
+            clearSearchBtn.classList.add('hidden');
+            autocompleteResults.classList.add('hidden');
+            searchInput.focus();
+        }
+
+        // Close autocomplete when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!document.getElementById('search-container').contains(e.target)) {
+                autocompleteResults.classList.add('hidden');
+            }
+        });
+
+        // Toast Notification System
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let borderColor = 'border-cyan-500/40';
+            let bgColor = 'bg-slate-900/95';
+            let textColor = 'text-cyan-300';
+
+            if (type === 'success') {
+                borderColor = 'border-emerald-500/40';
+                textColor = 'text-emerald-300';
+            } else if (type === 'error') {
+                borderColor = 'border-rose-500/40';
+                textColor = 'text-rose-300';
+            } else if (type === 'warning') {
+                borderColor = 'border-amber-500/40';
+                textColor = 'text-amber-300';
+            }
+
+            toast.className = `pointer-events-auto ${bgColor} border ${borderColor} ${textColor} px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md text-sm font-medium flex items-center space-x-2 max-w-sm`;
+            toast.innerHTML = `<span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // Modals Controls
+        function openRulesModal() {
+            document.getElementById('rules-modal').classList.remove('hidden');
+        }
+        function closeRulesModal() {
+            document.getElementById('rules-modal').classList.add('hidden');
+        }
+        function restartGame() {
+            initGame();
+            showToast("Nouvelle partie lancée !", "info");
+        }
+
+        // Load dataset and start game on window load
+        window.onload = function() {
+            loadGlobalCitiesDatabase();
+        };
+    </script>
+</body>
+</html>
