@@ -86,6 +86,27 @@
             </div>
 
             <div class="flex items-center flex-wrap gap-2 sm:gap-3">
+                <!-- Pool Size Selector (Sorted by Population) -->
+                <div class="flex items-center bg-slate-950/90 px-2.5 py-1 rounded-xl border border-slate-800 space-x-1.5" title="Taille du pool de jeu (villes sélectionnées par ordre décroissant d'habitants)">
+                    <svg class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <select id="pool-size-select" onchange="onPoolSizeChange(this.value)" class="bg-transparent text-xs font-medium text-slate-200 focus:outline-none cursor-pointer pr-1">
+                        <option value="100" class="bg-slate-900">Top 100 (par population)</option>
+                        <option value="250" class="bg-slate-900">Top 250 (par population)</option>
+                        <option value="500" class="bg-slate-900">Top 500 (par population)</option>
+                        <option value="1000" selected class="bg-slate-900">Top 1 000 (par population)</option>
+                        <option value="2500" class="bg-slate-900">Top 2 500 (par population)</option>
+                        <option value="5000" class="bg-slate-900">Top 5 000 (par population)</option>
+                    </select>
+                </div>
+
+                <!-- World Capitals Only Toggle -->
+                <button id="btn-capitals-only" onclick="toggleCapitalsOnly()" class="px-2.5 py-1.5 text-xs font-medium rounded-xl border border-slate-700/80 bg-slate-950/90 text-slate-300 hover:text-white transition flex items-center space-x-1.5" title="Limiter la ville secrète, les indices et les recherches aux capitales mondiales">
+                    <span id="capitals-star" class="text-slate-500">★</span>
+                    <span>Capitales uniquement</span>
+                </button>
+
                 <!-- Mode Selector (Classique vs Hardcore) -->
                 <div class="flex items-center bg-slate-950/90 p-1 rounded-xl border border-slate-800" title="Mode Classique : affiche le nom des 3 villes indices. Mode Hardcore : masque leur nom.">
                     <button id="btn-mode-classic" onclick="setDifficultyMode('classic')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-cyan-500 text-slate-950 transition shadow-sm">
@@ -123,7 +144,10 @@
             </svg>
         </div>
         <h2 class="text-lg font-bold text-white tracking-wide mb-1">Synchronisation Satellite...</h2>
-        <p id="loading-status" class="text-xs font-mono text-cyan-400">Téléchargement de la base de données mondiale (GeoNames / CDN)...</p>
+        <p id="loading-status" class="text-xs font-mono text-cyan-400 mb-5">Connexion à cities500.json (GeoNames)...</p>
+        <button id="btn-skip-loading" onclick="skipNetworkLoading()" class="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl transition shadow-md">
+            Démarrer immédiatement (base intégrée)
+        </button>
     </div>
 
     <!-- Main Content Area -->
@@ -274,13 +298,13 @@
                 <div id="radar-wrapper" class="relative w-full aspect-square max-w-[540px] flex items-center justify-center bg-slate-950/90 rounded-2xl border border-slate-800/80 p-3 shadow-inner select-none">
                     
                     <!-- Floating Hover Tooltip -->
-                    <div id="radar-tooltip" class="absolute z-30 pointer-events-none hidden bg-slate-900/95 border border-cyan-500/40 rounded-xl px-3 py-2 shadow-2xl backdrop-blur-md text-xs text-left min-w-[170px] transition-opacity duration-150">
+                    <div id="radar-tooltip" class="absolute z-30 pointer-events-none hidden bg-slate-900/95 border border-cyan-500/40 rounded-xl px-3 py-2 shadow-2xl backdrop-blur-md text-xs text-left min-w-[185px] transition-opacity duration-150">
                         <div id="tt-title" class="font-bold text-white text-sm">Ville, Pays</div>
                         <div id="tt-type" class="text-[10px] font-mono uppercase text-indigo-400 mb-1">Indice Initial</div>
                         <div class="space-y-0.5 font-mono text-[11px] text-slate-300 border-t border-slate-800 pt-1">
                             <div>Distance : <span id="tt-dist" class="text-cyan-400 font-semibold">0 km</span></div>
                             <div>Azimut : <span id="tt-bearing" class="text-amber-400 font-semibold">NE 45°</span></div>
-                            <div id="tt-pop-row">Population : <span id="tt-pop" class="text-emerald-400 font-semibold">—</span></div>
+                            <div>Population : <span id="tt-pop" class="text-emerald-400 font-semibold">—</span></div>
                             <div id="tt-coords" class="text-[10px] text-slate-500">48.85° N, 2.35° E</div>
                         </div>
                     </div>
@@ -382,17 +406,16 @@
                     <span id="modal-secret-city" class="text-sm font-bold text-cyan-400">Tokyo, Japon</span>
                 </div>
                 <div>
+                    <span class="block text-[10px] text-slate-400 uppercase">Population</span>
+                    <span id="modal-secret-pop" class="text-xs font-mono text-emerald-400">13 960 000 hab.</span>
+                </div>
+                <div>
                     <span class="block text-[10px] text-slate-400 uppercase">Coordonnées GPS</span>
                     <span id="modal-secret-coords" class="text-xs font-mono text-slate-300">35.68° N, 139.65° E</span>
                 </div>
                 <div>
-                    <span class="block text-[10px] text-slate-400 uppercase">Population</span>
-                    <span id="modal-secret-pop" class="text-xs font-mono text-cyan-300">—</span>
-                </div>
-                <div>
-                    <span class="block text-[10px] text-slate-400 uppercase">Performance</span>
-                    <span id="modal-attempts" class="text-sm font-bold font-mono text-emerald-400">4</span>
-                    <span class="text-xs text-slate-500 font-mono"> (<span id="modal-time" class="text-amber-400">01:24</span>)</span>
+                    <span class="block text-[10px] text-slate-400 uppercase">Essais / Temps</span>
+                    <span class="text-sm font-bold font-mono text-amber-400"><span id="modal-attempts">4</span> &bull; <span id="modal-time">01:24</span></span>
                 </div>
             </div>
 
@@ -433,246 +456,487 @@
             </div>
             
             <div class="space-y-3 text-sm text-slate-300 mb-6">
-                <p><strong>Principe :</strong> Une <strong class="text-cyan-400">ville secrète</strong> est choisie aléatoirement parmi une base de données mondiale de milliers de villes.</p>
+                <p><strong>Principe :</strong> Une <strong class="text-cyan-400">ville secrète</strong> est choisie aléatoirement parmi les villes les plus peuplées du monde (triées par nombre d'habitants).</p>
+                <p><strong>Options de Pool :</strong> Vous pouvez ajuster le <strong class="text-cyan-300">Top N par population</strong> (de Top 100 à Top 5 000) ou activer le mode <strong class="text-amber-300">★ Capitales uniquement</strong>.</p>
                 <p><strong>Indices Initiaux :</strong> 3 villes aléatoires sont placées sur le radar. Leurs vecteurs partent du centre (la ville secrète) pour indiquer leur <strong>distance exacte</strong> et leur <strong>direction cardinale</strong>.</p>
                 <ul class="list-disc pl-5 space-y-1 text-xs text-slate-400">
                     <li><strong class="text-cyan-300">Mode Classique :</strong> Le nom et le pays des 3 villes indices sont affichés directement sur le radar.</li>
                     <li><strong class="text-amber-300">Mode Hardcore :</strong> Les noms des 3 indices sont masqués (<em>Indice #1, #2, #3</em>) pour une triangulation pure.</li>
                 </ul>
-                <p><strong>Propositions :</strong> À chaque essai, un nouveau vecteur coloré s'ajoute depuis le centre selon votre proximité :</p>
-                <ul class="list-disc pl-5 space-y-1 text-xs text-slate-400">
-                    <li><span class="text-emerald-400 font-semibold">Vert</span> : Très proche (&lt; 800 km)</li>
-                    <li><span class="text-amber-400 font-semibold">Orange / Jaune</span> : Distance modérée (800 - 2 500 km)</li>
-                    <li><span class="text-rose-400 font-semibold">Rouge</span> : Éloigné (&gt; 2 500 km)</li>
-                </ul>
+                <p><strong>Triangulation :</strong> Chaque ville que vous proposez ajoute un nouveau vecteur coloré selon sa proximité jusqu'à ce que vous trouviez la cible.</p>
             </div>
 
-            <button onclick="closeRulesModal()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl transition text-sm border border-slate-700">
-                Compris, Jouons !
+            <button onclick="closeRulesModal()" class="w-full py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold rounded-xl transition text-sm">
+                Compris, jouer !
             </button>
         </div>
     </div>
 
-    <!-- Toast Notification Container -->
-    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
-    <!-- JavaScript Game Logic & Dynamic World Cities Database -->
     <script>
-
-        TAILLE_POOL_AUTOCOMPLETE = 30000;
-        TAILLE_POOL_JEU = 1000;
-        // Country ISO Alpha-2 to French Name Mapping (for clean localization of open-source GeoNames datasets)
+        // Country ISO Alpha-2 to French Country Name
         const COUNTRY_NAMES_FR = {
-            "AF": "Afghanistan", "ZA": "Afrique du Sud", "AL": "Albanie", "DZ": "Algérie", "DE": "Allemagne",
-            "AD": "Andorre", "AO": "Angola", "SA": "Arabie saoudite", "AR": "Argentine", "AM": "Arménie",
-            "AU": "Australie", "AT": "Autriche", "AZ": "Azerbaïdjan", "BS": "Bahamas", "BH": "Bahreïn",
-            "BD": "Bangladesh", "BB": "Barbade", "BE": "Belgique", "BZ": "Belize", "BJ": "Bénin",
-            "BT": "Bhoutan", "BY": "Biélorussie", "BO": "Bolivie", "BA": "Bosnie-Herzégovine", "BW": "Botswana",
-            "BR": "Brésil", "BN": "Brunei", "BG": "Bulgarie", "BF": "Burkina Faso", "BI": "Burundi",
-            "KH": "Cambodge", "CM": "Cameroun", "CA": "Canada", "CV": "Cap-Vert", "CL": "Chili",
-            "CN": "Chine", "CY": "Chypre", "CO": "Colombie", "KM": "Comores", "CG": "Congo",
-            "CD": "RD Congo", "KP": "Corée du Nord", "KR": "Corée du Sud", "CR": "Costa Rica", "CI": "Côte d'Ivoire",
-            "HR": "Croatie", "CU": "Cuba", "DK": "Danemark", "DJ": "Djibouti", "EG": "Égypte",
-            "AE": "Émirats arabes unis", "EC": "Équateur", "ER": "Érythrée", "ES": "Espagne", "EE": "Estonie",
-            "US": "États-Unis", "ET": "Éthiopie", "FJ": "Fidji", "FI": "Finlande", "FR": "France",
-            "GA": "Gabon", "GM": "Gambie", "GE": "Géorgie", "GH": "Ghana", "GR": "Grèce",
-            "GT": "Guatemala", "GN": "Guinée", "GQ": "Guinée équatoriale", "GW": "Guinée-Bissau", "GY": "Guyana",
-            "HT": "Haïti", "HN": "Honduras", "HK": "Hong Kong", "HU": "Hongrie", "IN": "Inde",
-            "ID": "Indonésie", "IQ": "Irak", "IR": "Iran", "IE": "Irlande", "IS": "Islande",
-            "IL": "Israël", "IT": "Italie", "JM": "Jamaïque", "JP": "Japon", "JO": "Jordanie",
-            "KZ": "Kazakhstan", "KE": "Kenya", "KG": "Kirghizistan", "KW": "Koweït", "LA": "Laos",
-            "LS": "Lesotho", "LV": "Lettonie", "LB": "Liban", "LR": "Liberia", "LY": "Libye",
-            "LI": "Liechtenstein", "LT": "Lituanie", "LU": "Luxembourg", "MO": "Macao", "MK": "Macédoine du Nord",
-            "MG": "Madagascar", "MY": "Malaisie", "MW": "Malawi", "MV": "Maldives", "ML": "Mali",
-            "MT": "Malte", "MA": "Maroc", "MU": "Maurice", "MR": "Mauritanie", "MX": "Mexique",
-            "MD": "Moldavie", "MC": "Monaco", "MN": "Mongolie", "ME": "Monténégro", "MZ": "Mozambique",
-            "MM": "Myanmar", "NA": "Namibie", "NP": "Népal", "NI": "Nicaragua", "NE": "Niger",
-            "NG": "Nigéria", "NO": "Norvège", "NZ": "Nouvelle-Zélande", "OM": "Oman", "UG": "Ouganda",
-            "UZ": "Ouzbékistan", "PK": "Pakistan", "PA": "Panama", "PG": "Papouasie-Nouvelle-Guinée", "PY": "Paraguay",
-            "NL": "Pays-Bas", "PE": "Pérou", "PH": "Philippines", "PL": "Pologne", "PT": "Portugal",
-            "PR": "Porto Rico", "QA": "Qatar", "RO": "Roumanie", "GB": "Royaume-Uni", "RU": "Russie",
-            "RW": "Rwanda", "SV": "Salvador", "SN": "Sénégal", "RS": "Serbie", "SL": "Sierra Leone",
-            "SG": "Singapour", "SK": "Slovaquie", "SI": "Slovénie", "SO": "Somalie", "SD": "Soudan",
-            "SS": "Soudan du Sud", "LK": "Sri Lanka", "SE": "Suède", "CH": "Suisse", "SR": "Suriname",
-            "SY": "Syrie", "TJ": "Tadjikistan", "TW": "Taïwan", "TZ": "Tanzanie", "TD": "Tchad",
-            "CZ": "République tchèque", "TH": "Thaïlande", "TL": "Timor oriental", "TG": "Togo", "TT": "Trinité-et-Tobago",
-            "TN": "Tunisie", "TM": "Turkménistan", "TR": "Turquie", "UA": "Ukraine", "UY": "Uruguay",
-            "VU": "Vanuatu", "VE": "Venezuela", "VN": "Viêt Nam", "YE": "Yémen", "ZM": "Zambie", "ZW": "Zimbabwe"
+            "AF": "Afghanistan", "AL": "Albanie", "DZ": "Algérie", "AD": "Andorre", "AO": "Angola",
+            "AG": "Antigua-et-Barbuda", "AR": "Argentine", "AM": "Arménie", "AU": "Australie", "AT": "Autriche",
+            "AZ": "Azerbaïdjan", "BS": "Bahamas", "BH": "Bahreïn", "BD": "Bangladesh", "BB": "Barbade",
+            "BY": "Biélorussie", "BE": "Belgique", "BZ": "Belize", "BJ": "Bénin", "BT": "Bhoutan",
+            "BO": "Bolivie", "BA": "Bosnie-Herzégovine", "BW": "Botswana", "BR": "Brésil", "BN": "Brunei",
+            "BG": "Bulgarie", "BF": "Burkina Faso", "BI": "Burundi", "CV": "Cap-Vert", "KH": "Cambodge",
+            "CM": "Cameroun", "CA": "Canada", "CF": "République centrafricaine", "TD": "Tchad", "CL": "Chili",
+            "CN": "Chine", "CO": "Colombie", "KM": "Comores", "CG": "Congo", "CD": "RD Congo",
+            "CR": "Costa Rica", "CI": "Côte d'Ivoire", "HR": "Croatie", "CU": "Cuba", "CY": "Chypre",
+            "CZ": "Tchéquie", "DK": "Danemark", "DJ": "Djibouti", "DM": "Dominique", "DO": "République dominicaine",
+            "EC": "Équateur", "EG": "Égypte", "SV": "Salvador", "GQ": "Guinée équatoriale", "ER": "Érythrée",
+            "EE": "Estonie", "SZ": "Eswatini", "ET": "Éthiopie", "FJ": "Fidji", "FI": "Finlande",
+            "FR": "France", "GA": "Gabon", "GM": "Gambie", "GE": "Géorgie", "DE": "Allemagne",
+            "GH": "Ghana", "GR": "Grèce", "GD": "Grenade", "GT": "Guatemala", "GN": "Guinée",
+            "GW": "Guinée-Bissau", "GY": "Guyana", "HT": "Haïti", "HN": "Honduras", "HU": "Hongrie",
+            "IS": "Islande", "IN": "Inde", "ID": "Indonésie", "IR": "Iran", "IQ": "Irak",
+            "IE": "Irlande", "IL": "Israël", "IT": "Italie", "JM": "Jamaïque", "JP": "Japon",
+            "JO": "Jordanie", "KZ": "Kazakhstan", "KE": "Kenya", "KI": "Kiribati", "KP": "Corée du Nord",
+            "KR": "Corée du Sud", "KW": "Koweït", "KG": "Kirghizistan", "LA": "Laos", "LV": "Lettonie",
+            "LB": "Liban", "LS": "Lesotho", "LR": "Liberia", "LY": "Libye", "LI": "Liechtenstein",
+            "LT": "Lituanie", "LU": "Luxembourg", "MG": "Madagascar", "MW": "Malawi", "MY": "Malaisie",
+            "MV": "Maldives", "ML": "Mali", "MT": "Malte", "MH": "Îles Marshall", "MR": "Mauritanie",
+            "MU": "Maurice", "MX": "Mexique", "FM": "Micronésie", "MD": "Moldavie", "MC": "Monaco",
+            "MN": "Mongolie", "ME": "Monténégro", "MA": "Maroc", "MZ": "Mozambique", "MM": "Myanmar",
+            "NA": "Namibie", "NR": "Nauru", "NP": "Népal", "NL": "Pays-Bas", "NZ": "Nouvelle-Zélande",
+            "NI": "Nicaragua", "NE": "Niger", "NG": "Nigeria", "MK": "Macédoine du Nord", "NO": "Norvège",
+            "OM": "Oman", "PK": "Pakistan", "PW": "Palaos", "PS": "Palestine", "PA": "Panama",
+            "PG": "Papouasie-Nouvelle-Guinée", "PY": "Paraguay", "PE": "Pérou", "PH": "Philippines",
+            "PL": "Pologne", "PT": "Portugal", "QA": "Qatar", "RO": "Roumanie", "RU": "Russie",
+            "RW": "Rwanda", "KN": "Saint-Christophe-et-Niévès", "LC": "Sainte-Lucie", "VC": "Saint-Vincent-et-les-Grenadines",
+            "WS": "Samoa", "SM": "Saint-Marin", "ST": "Sao Tomé-et-Principe", "SA": "Arabie saoudite",
+            "SN": "Sénégal", "RS": "Serbie", "SC": "Seychelles", "SL": "Sierra Leone", "SG": "Singapour",
+            "SK": "Slovaquie", "SI": "Slovénie", "SB": "Îles Salomon", "SO": "Somalie", "ZA": "Afrique du Sud",
+            "SS": "Soudan du Sud", "ES": "Espagne", "LK": "Sri Lanka", "SD": "Soudan", "SR": "Suriname",
+            "SE": "Suède", "CH": "Suisse", "SY": "Syrie", "TW": "Taïwan", "TJ": "Tadjikistan",
+            "TZ": "Tanzanie", "TH": "Thaïlande", "TL": "Timor oriental", "TG": "Togo", "TO": "Tonga",
+            "TT": "Trinité-et-Tobago", "TN": "Tunisie", "TR": "Turquie", "TM": "Turkménistan", "TV": "Tuvalu",
+            "UG": "Ouganda", "UA": "Ukraine", "AE": "Émirats arabes unis", "GB": "Royaume-Uni", "US": "États-Unis",
+            "UY": "Uruguay", "UZ": "Ouzbékistan", "VU": "Vanuatu", "VA": "Vatican", "VE": "Venezuela",
+            "VN": "Viêt Nam", "YE": "Yémen", "ZM": "Zambie", "ZW": "Zimbabwe", "XK": "Kosovo", "HK": "Hong Kong"
         };
 
-        // Compact Fallback Database (only used if all external CDN fetches fail offline)
+        // Country ISO Alpha-2 to World Capital City Name(s)
+        const WORLD_CAPITALS_BY_COUNTRY = {
+            "AF": ["Kabul"], "AL": ["Tirana"], "DZ": ["Algiers"], "AD": ["Andorra la Vella"], "AO": ["Luanda"],
+            "AG": ["Saint John's", "St. John's"], "AR": ["Buenos Aires"], "AM": ["Yerevan"], "AU": ["Canberra"],
+            "AT": ["Vienna"], "AZ": ["Baku"], "BS": ["Nassau"], "BH": ["Manama"], "BD": ["Dhaka"],
+            "BB": ["Bridgetown"], "BY": ["Minsk"], "BE": ["Brussels"], "BZ": ["Belmopan"], "BJ": ["Porto-Novo", "Cotonou"],
+            "BT": ["Thimphu"], "BO": ["La Paz", "Sucre"], "BA": ["Sarajevo"], "BW": ["Gaborone"], "BR": ["Brasilia", "Brasília"],
+            "BN": ["Bandar Seri Begawan"], "BG": ["Sofia"], "BF": ["Ouagadougou"], "BI": ["Gitega", "Bujumbura"],
+            "CV": ["Praia"], "KH": ["Phnom Penh"], "CM": ["Yaounde", "Yaoundé"], "CA": ["Ottawa"],
+            "CF": ["Bangui"], "TD": ["N'Djamena"], "CL": ["Santiago"], "CN": ["Beijing"], "CO": ["Bogota", "Bogotá"],
+            "KM": ["Moroni"], "CG": ["Brazzaville"], "CD": ["Kinshasa"], "CR": ["San Jose", "San José"],
+            "CI": ["Yamoussoukro", "Abidjan"], "HR": ["Zagreb"], "CU": ["Havana"], "CY": ["Nicosia"],
+            "CZ": ["Prague"], "DK": ["Copenhagen"], "DJ": ["Djibouti"], "DM": ["Roseau"], "DO": ["Santo Domingo"],
+            "EC": ["Quito"], "EG": ["Cairo"], "SV": ["San Salvador"], "GQ": ["Malabo"], "ER": ["Asmara"],
+            "EE": ["Tallinn"], "SZ": ["Mbabane"], "ET": ["Addis Ababa"], "FJ": ["Suva"], "FI": ["Helsinki"],
+            "FR": ["Paris"], "GA": ["Libreville"], "GM": ["Banjul"], "GE": ["Tbilisi"], "DE": ["Berlin"],
+            "GH": ["Accra"], "GR": ["Athens"], "GD": ["Saint George's", "St. George's"], "GT": ["Guatemala City"],
+            "GN": ["Conakry"], "GW": ["Bissau"], "GY": ["Georgetown"], "HT": ["Port-au-Prince"], "HN": ["Tegucigalpa"],
+            "HU": ["Budapest"], "IS": ["Reykjavik"], "IN": ["New Delhi"], "ID": ["Jakarta"], "IR": ["Tehran"],
+            "IQ": ["Baghdad"], "IE": ["Dublin"], "IL": ["Jerusalem"], "IT": ["Rome"], "JM": ["Kingston"],
+            "JP": ["Tokyo"], "JO": ["Amman"], "KZ": ["Astana", "Nur-Sultan"], "KE": ["Nairobi"], "KI": ["Tarawa"],
+            "KP": ["Pyongyang"], "KR": ["Seoul"], "KW": ["Kuwait City"], "KG": ["Bishkek"], "LA": ["Vientiane"],
+            "LV": ["Riga"], "LB": ["Beirut"], "LS": ["Maseru"], "LR": ["Monrovia"], "LY": ["Tripoli"],
+            "LI": ["Vaduz"], "LT": ["Vilnius"], "LU": ["Luxembourg"], "MG": ["Antananarivo"], "MW": ["Lilongwe"],
+            "MY": ["Kuala Lumpur"], "MV": ["Male", "Malé"], "ML": ["Bamako"], "MT": ["Valletta"], "MH": ["Majuro"],
+            "MR": ["Nouakchott"], "MU": ["Port Louis"], "MX": ["Mexico City"], "FM": ["Palikir"], "MD": ["Chisinau", "Chișinău"],
+            "MC": ["Monaco"], "MN": ["Ulaanbaatar"], "ME": ["Podgorica"], "MA": ["Rabat"], "MZ": ["Maputo"],
+            "MM": ["Naypyidaw", "Nay Pyi Taw"], "NA": ["Windhoek"], "NR": ["Yaren"], "NP": ["Kathmandu"],
+            "NL": ["Amsterdam"], "NZ": ["Wellington"], "NI": ["Managua"], "NE": ["Niamey"], "NG": ["Abuja"],
+            "MK": ["Skopje"], "NO": ["Oslo"], "OM": ["Muscat"], "PK": ["Islamabad"], "PW": ["Ngerulmud"],
+            "PS": ["Ramallah", "East Jerusalem"], "PA": ["Panama City"], "PG": ["Port Moresby"], "PY": ["Asuncion", "Asunción"],
+            "PE": ["Lima"], "PH": ["Manila"], "PL": ["Warsaw"], "PT": ["Lisbon"], "QA": ["Doha"],
+            "RO": ["Bucharest"], "RU": ["Moscow"], "RW": ["Kigali"], "KN": ["Basseterre"], "LC": ["Castries"],
+            "VC": ["Kingstown"], "WS": ["Apia"], "SM": ["San Marino"], "ST": ["Sao Tome", "São Tomé"],
+            "SA": ["Riyadh"], "SN": ["Dakar"], "RS": ["Belgrade"], "SC": ["Victoria"], "SL": ["Freetown"],
+            "SG": ["Singapore"], "SK": ["Bratislava"], "SI": ["Ljubljana"], "SB": ["Honiara"], "SO": ["Mogadishu"],
+            "ZA": ["Pretoria", "Cape Town"], "SS": ["Juba"], "ES": ["Madrid"], "LK": ["Colombo", "Sri Jayawardenepura Kotte"],
+            "SD": ["Khartoum"], "SR": ["Paramaribo"], "SE": ["Stockholm"], "CH": ["Bern"], "SY": ["Damascus"],
+            "TW": ["Taipei"], "TJ": ["Dushanbe"], "TZ": ["Dodoma", "Dar es Salaam"], "TH": ["Bangkok"],
+            "TL": ["Dili"], "TG": ["Lome", "Lomé"], "TO": ["Nuku'alofa"], "TT": ["Port of Spain"], "TN": ["Tunis"],
+            "TR": ["Ankara"], "TM": ["Ashgabat"], "TV": ["Funafuti"], "UG": ["Kampala"], "UA": ["Kyiv", "Kiev"],
+            "AE": ["Abu Dhabi"], "GB": ["London"], "US": ["Washington", "Washington, D.C."], "UY": ["Montevideo"],
+            "UZ": ["Tashkent"], "VU": ["Port Vila"], "VA": ["Vatican City"], "VE": ["Caracas"], "VN": ["Hanoi"],
+            "YE": ["Sanaa", "Sana'a"], "ZM": ["Lusaka"], "ZW": ["Harare"], "XK": ["Pristina"]
+        };
+
+        // Comprehensive Built-In Fallback Dataset (120+ Major World Cities & Capitals sorted by population)
         const FALLBACK_CITIES = [
-            { name: "Paris", country: "France", lat: 48.8566, lon: 2.3522, pop: 2140000 },
-            { name: "Tokyo", country: "Japon", lat: 35.6762, lon: 139.6503, pop: 13960000 },
-            { name: "New York", country: "États-Unis", lat: 40.7128, lon: -74.0060, pop: 8800000 },
-            { name: "Londres", country: "Royaume-Uni", lat: 51.5074, lon: -0.1278, pop: 8980000 },
-            { name: "Sydney", country: "Australie", lat: -33.8688, lon: 151.2093, pop: 5312000 },
-            { name: "Le Caire", country: "Égypte", lat: 30.0444, lon: 31.2357, pop: 9500000 },
-            { name: "Rio de Janeiro", country: "Brésil", lat: -22.9068, lon: -43.1729, pop: 6748000 },
-            { name: "Berlin", country: "Allemagne", lat: 52.5200, lon: 13.4050, pop: 3645000 },
-            { name: "Pékin", country: "Chine", lat: 39.9042, lon: 116.4074, pop: 21540000 },
-            { name: "Moscou", country: "Russie", lat: 55.7558, lon: 37.6173, pop: 12500000 },
-            { name: "Rome", country: "Italie", lat: 41.9028, lon: 12.4964, pop: 2873000 },
-            { name: "Madrid", country: "Espagne", lat: 40.4168, lon: -3.7038, pop: 3223000 },
-            { name: "Buenos Aires", country: "Argentine", lat: -34.6037, lon: -58.3816, pop: 3075000 },
-            { name: "Toronto", country: "Canada", lat: 43.6532, lon: -79.3832, pop: 2930000 },
-            { name: "Mexico", country: "Mexique", lat: 19.4326, lon: -99.1332, pop: 9209000 },
-            { name: "New Delhi", country: "Inde", lat: 28.6139, lon: 77.2090, pop: 16780000 },
-            { name: "Singapour", country: "Singapour", lat: 1.3521, lon: 103.8198, pop: 5686000 },
-            { name: "Dubaï", country: "Émirats arabes unis", lat: 25.2048, lon: 55.2708, pop: 3331000 },
-            { name: "Le Cap", country: "Afrique du Sud", lat: -33.9249, lon: 18.4241, pop: 4618000 },
-            { name: "Bangkok", country: "Thaïlande", lat: 13.7563, lon: 100.5018, pop: 10539000 },
-            { name: "Séoul", country: "Corée du Sud", lat: 37.5665, lon: 126.9780, pop: 9776000 },
-            { name: "Istanbul", country: "Turquie", lat: 41.0082, lon: 28.9784, pop: 15460000 },
-            { name: "Nairobi", country: "Kenya", lat: -1.2921, lon: 36.8219, pop: 4397000 },
-            { name: "Lima", country: "Pérou", lat: -12.0464, lon: -77.0428, pop: 9750000 },
-            { name: "Dakar", country: "Sénégal", lat: 14.7167, lon: -17.4677, pop: 1146000 },
-            { name: "Reykjavik", country: "Islande", lat: 64.1466, lon: -21.9426, pop: 131000 },
-            { name: "Montréal", country: "Canada", lat: 45.5017, lon: -73.5673, pop: 1780000 },
-            { name: "Toulouse", country: "France", lat: 43.6047, lon: 1.4442, pop: 493000 }
+            { name: "Shanghai", countryCode: "CN", country: "Chine", lat: 31.2222, lon: 121.4581, pop: 24870000, isCapital: false },
+            { name: "Beijing", countryCode: "CN", country: "Chine", lat: 39.9075, lon: 116.3972, pop: 21540000, isCapital: true },
+            { name: "New Delhi", countryCode: "IN", country: "Inde", lat: 28.6139, lon: 77.2090, pop: 16780000, isCapital: true },
+            { name: "Istanbul", countryCode: "TR", country: "Turquie", lat: 41.0138, lon: 28.9497, pop: 15460000, isCapital: false },
+            { name: "Karachi", countryCode: "PK", country: "Pakistan", lat: 24.8608, lon: 67.0104, pop: 14910000, isCapital: false },
+            { name: "Tokyo", countryCode: "JP", country: "Japon", lat: 35.6895, lon: 139.6917, pop: 13960000, isCapital: true },
+            { name: "Guangzhou", countryCode: "CN", country: "Chine", lat: 23.1167, lon: 113.2500, pop: 13500000, isCapital: false },
+            { name: "Mumbai", countryCode: "IN", country: "Inde", lat: 19.0728, lon: 72.8826, pop: 12690000, isCapital: false },
+            { name: "Moscow", countryCode: "RU", country: "Russie", lat: 55.7522, lon: 37.6156, pop: 12500000, isCapital: true },
+            { name: "Shenzhen", countryCode: "CN", country: "Chine", lat: 22.5455, lon: 114.0683, pop: 12350000, isCapital: false },
+            { name: "Sao Paulo", countryCode: "BR", country: "Brésil", lat: -23.5475, lon: -46.6361, pop: 12330000, isCapital: false },
+            { name: "Kinshasa", countryCode: "CD", country: "RD Congo", lat: -4.3276, lon: 15.3136, pop: 11850000, isCapital: true },
+            { name: "Lahore", countryCode: "PK", country: "Pakistan", lat: 31.5580, lon: 74.3507, pop: 11120000, isCapital: false },
+            { name: "Jakarta", countryCode: "ID", country: "Indonésie", lat: -6.2146, lon: 106.8451, pop: 10560000, isCapital: true },
+            { name: "Bangkok", countryCode: "TH", country: "Thaïlande", lat: 13.7540, lon: 100.5014, pop: 10539000, isCapital: true },
+            { name: "Seoul", countryCode: "KR", country: "Corée du Sud", lat: 37.5660, lon: 126.9784, pop: 9776000, isCapital: true },
+            { name: "Lima", countryCode: "PE", country: "Pérou", lat: -12.0432, lon: -77.0282, pop: 9750000, isCapital: true },
+            { name: "Cairo", countryCode: "EG", country: "Égypte", lat: 30.0626, lon: 31.2497, pop: 9500000, isCapital: true },
+            { name: "Mexico City", countryCode: "MX", country: "Mexique", lat: 19.4285, lon: -99.1277, pop: 9209000, isCapital: true },
+            { name: "London", countryCode: "GB", country: "Royaume-Uni", lat: 51.5085, lon: -0.1257, pop: 8980000, isCapital: true },
+            { name: "Dhaka", countryCode: "BD", country: "Bangladesh", lat: 23.7104, lon: 90.4074, pop: 8906000, isCapital: true },
+            { name: "New York", countryCode: "US", country: "États-Unis", lat: 40.7143, lon: -74.0060, pop: 8800000, isCapital: false },
+            { name: "Tehran", countryCode: "IR", country: "Iran", lat: 35.6944, lon: 51.4215, pop: 8693000, isCapital: true },
+            { name: "Bengaluru", countryCode: "IN", country: "Inde", lat: 12.9719, lon: 77.5937, pop: 8443000, isCapital: false },
+            { name: "Ho Chi Minh City", countryCode: "VN", country: "Viêt Nam", lat: 10.8230, lon: 106.6296, pop: 8426000, isCapital: false },
+            { name: "Lagos", countryCode: "NG", country: "Nigeria", lat: 6.4541, lon: 3.3947, pop: 8048000, isCapital: false },
+            { name: "Bogota", countryCode: "CO", country: "Colombie", lat: 4.6097, lon: -74.0817, pop: 7674000, isCapital: true },
+            { name: "Hong Kong", countryCode: "HK", country: "Hong Kong", lat: 22.2783, lon: 114.1747, pop: 7482000, isCapital: false },
+            { name: "Baghdad", countryCode: "IQ", country: "Irak", lat: 33.3406, lon: 44.4009, pop: 7216000, isCapital: true },
+            { name: "Rio de Janeiro", countryCode: "BR", country: "Brésil", lat: -22.9068, lon: -43.1729, pop: 6748000, isCapital: false },
+            { name: "Santiago", countryCode: "CL", country: "Chili", lat: -33.4569, lon: -70.6483, pop: 6257000, isCapital: true },
+            { name: "Riyadh", countryCode: "SA", country: "Arabie saoudite", lat: 24.6877, lon: 46.7219, pop: 5676000, isCapital: true },
+            { name: "Singapore", countryCode: "SG", country: "Singapour", lat: 1.2897, lon: 103.8501, pop: 5686000, isCapital: true },
+            { name: "Saint Petersburg", countryCode: "RU", country: "Russie", lat: 59.9386, lon: 30.3141, pop: 5383000, isCapital: false },
+            { name: "Sydney", countryCode: "AU", country: "Australie", lat: -33.8678, lon: 151.2073, pop: 5312000, isCapital: false },
+            { name: "Ankara", countryCode: "TR", country: "Turquie", lat: 39.9199, lon: 32.8543, pop: 5150000, isCapital: true },
+            { name: "Melbourne", countryCode: "AU", country: "Australie", lat: -37.8140, lon: 144.9633, pop: 5078000, isCapital: false },
+            { name: "Yangon", countryCode: "MM", country: "Myanmar", lat: 16.8053, lon: 96.1561, pop: 4728000, isCapital: false },
+            { name: "Abidjan", countryCode: "CI", country: "Côte d'Ivoire", lat: 5.3097, lon: -4.0127, pop: 4707000, isCapital: false },
+            { name: "Alexandria", countryCode: "EG", country: "Égypte", lat: 31.2018, lon: 29.9158, pop: 4546000, isCapital: false },
+            { name: "Nairobi", countryCode: "KE", country: "Kenya", lat: -1.2833, lon: 36.8167, pop: 4397000, isCapital: true },
+            { name: "Johannesburg", countryCode: "ZA", country: "Afrique du Sud", lat: -26.2023, lon: 28.0436, pop: 4434000, isCapital: false },
+            { name: "Los Angeles", countryCode: "US", country: "États-Unis", lat: 34.0522, lon: -118.2437, pop: 3971000, isCapital: false },
+            { name: "Casablanca", countryCode: "MA", country: "Maroc", lat: 33.5883, lon: -7.6114, pop: 3752000, isCapital: false },
+            { name: "Berlin", countryCode: "DE", country: "Allemagne", lat: 52.5244, lon: 13.4105, pop: 3645000, isCapital: true },
+            { name: "Kabul", countryCode: "AF", country: "Afghanistan", lat: 34.5281, lon: 69.1723, pop: 3678000, isCapital: true },
+            { name: "Algiers", countryCode: "DZ", country: "Algérie", lat: 36.7323, lon: 3.0875, pop: 3415000, isCapital: true },
+            { name: "Madrid", countryCode: "ES", country: "Espagne", lat: 40.4165, lon: -3.7026, pop: 3223000, isCapital: true },
+            { name: "Buenos Aires", countryCode: "AR", country: "Argentine", lat: -34.6132, lon: -58.3772, pop: 3075000, isCapital: true },
+            { name: "Brasilia", countryCode: "BR", country: "Brésil", lat: -15.7797, lon: -47.9297, pop: 3055000, isCapital: true },
+            { name: "Kyiv", countryCode: "UA", country: "Ukraine", lat: 50.4547, lon: 30.5238, pop: 2962000, isCapital: true },
+            { name: "Toronto", countryCode: "CA", country: "Canada", lat: 43.7001, lon: -79.4163, pop: 2930000, isCapital: false },
+            { name: "Rome", countryCode: "IT", country: "Italie", lat: 41.8919, lon: 12.5113, pop: 2873000, isCapital: true },
+            { name: "Addis Ababa", countryCode: "ET", country: "Éthiopie", lat: 9.0250, lon: 38.7469, pop: 2757000, isCapital: true },
+            { name: "Chicago", countryCode: "US", country: "États-Unis", lat: 41.8500, lon: -87.6500, pop: 2720000, isCapital: false },
+            { name: "Osaka", countryCode: "JP", country: "Japon", lat: 34.6937, lon: 135.5022, pop: 2753000, isCapital: false },
+            { name: "Taipei", countryCode: "TW", country: "Taïwan", lat: 25.0478, lon: 121.5319, pop: 2646000, isCapital: true },
+            { name: "Luanda", countryCode: "AO", country: "Angola", lat: -8.8368, lon: 13.2343, pop: 2571000, isCapital: true },
+            { name: "Paris", countryCode: "FR", country: "France", lat: 48.8534, lon: 2.3488, pop: 2140000, isCapital: true },
+            { name: "Caracas", countryCode: "VE", country: "Venezuela", lat: 10.4880, lon: -66.8792, pop: 2087000, isCapital: true },
+            { name: "Havana", countryCode: "CU", country: "Cuba", lat: 23.1330, lon: -82.3830, pop: 2130000, isCapital: true },
+            { name: "Tashkent", countryCode: "UZ", country: "Ouzbékistan", lat: 41.2646, lon: 69.2163, pop: 2571000, isCapital: true },
+            { name: "Accra", countryCode: "GH", country: "Ghana", lat: 5.5560, lon: -0.1969, pop: 2291000, isCapital: true },
+            { name: "Vienna", countryCode: "AT", country: "Autriche", lat: 48.2085, lon: 16.3721, pop: 1911000, isCapital: true },
+            { name: "Bucharest", countryCode: "RO", country: "Roumanie", lat: 44.4323, lon: 26.1063, pop: 1883000, isCapital: true },
+            { name: "Warsaw", countryCode: "PL", country: "Pologne", lat: 52.2298, lon: 21.0118, pop: 1790000, isCapital: true },
+            { name: "Budapest", countryCode: "HU", country: "Hongrie", lat: 47.4980, lon: 19.0399, pop: 1752000, isCapital: true },
+            { name: "Manila", countryCode: "PH", country: "Philippines", lat: 14.6042, lon: 120.9822, pop: 1780000, isCapital: true },
+            { name: "Montreal", countryCode: "CA", country: "Canada", lat: 45.5088, lon: -73.5878, pop: 1762000, isCapital: false },
+            { name: "Barcelona", countryCode: "ES", country: "Espagne", lat: 41.3888, lon: 2.1590, pop: 1620000, isCapital: false },
+            { name: "Hanoi", countryCode: "VN", country: "Viêt Nam", lat: 21.0245, lon: 105.8412, pop: 1600000, isCapital: true },
+            { name: "Quito", countryCode: "EC", country: "Équateur", lat: -0.2298, lon: -78.5249, pop: 1619000, isCapital: true },
+            { name: "Belgrade", countryCode: "RS", country: "Serbie", lat: 44.8040, lon: 20.4651, pop: 1373000, isCapital: true },
+            { name: "Abu Dhabi", countryCode: "AE", country: "Émirats arabes unis", lat: 24.4512, lon: 54.3970, pop: 1482000, isCapital: true },
+            { name: "Kuala Lumpur", countryCode: "MY", country: "Malaisie", lat: 3.1412, lon: 101.6865, pop: 1768000, isCapital: true },
+            { name: "Prague", countryCode: "CZ", country: "Tchéquie", lat: 50.0880, lon: 14.4208, pop: 1309000, isCapital: true },
+            { name: "Montevideo", countryCode: "UY", country: "Uruguay", lat: -34.9033, lon: -56.1882, pop: 1319000, isCapital: true },
+            { name: "Sofia", countryCode: "BG", country: "Bulgarie", lat: 42.6975, lon: 23.3241, pop: 1242000, isCapital: true },
+            { name: "Abuja", countryCode: "NG", country: "Nigeria", lat: 9.0579, lon: 7.4951, pop: 1235000, isCapital: true },
+            { name: "Dakar", countryCode: "SN", country: "Sénégal", lat: 14.6937, lon: -17.4441, pop: 1146000, isCapital: true },
+            { name: "Tbilisi", countryCode: "GE", country: "Géorgie", lat: 41.6941, lon: 44.8337, pop: 1118000, isCapital: true },
+            { name: "Yerevan", countryCode: "AM", country: "Arménie", lat: 40.1811, lon: 44.5136, pop: 1075000, isCapital: true },
+            { name: "Astana", countryCode: "KZ", country: "Kazakhstan", lat: 51.1801, lon: 71.4460, pop: 1136000, isCapital: true },
+            { name: "Ottawa", countryCode: "CA", country: "Canada", lat: 45.4112, lon: -75.6981, pop: 1017000, isCapital: true },
+            { name: "Stockholm", countryCode: "SE", country: "Suède", lat: 59.3294, lon: 18.0687, pop: 975000, isCapital: true },
+            { name: "Amsterdam", countryCode: "NL", country: "Pays-Bas", lat: 52.3740, lon: 4.8897, pop: 872000, isCapital: true },
+            { name: "Pretoria", countryCode: "ZA", country: "Afrique du Sud", lat: -25.7449, lon: 28.1878, pop: 741000, isCapital: true },
+            { name: "Washington", countryCode: "US", country: "États-Unis", lat: 38.8951, lon: -77.0364, pop: 702000, isCapital: true },
+            { name: "Oslo", countryCode: "NO", country: "Norvège", lat: 59.9127, lon: 10.7461, pop: 693000, isCapital: true },
+            { name: "Athens", countryCode: "GR", country: "Grèce", lat: 37.9838, lon: 23.7278, pop: 664000, isCapital: true },
+            { name: "Helsinki", countryCode: "FI", country: "Finlande", lat: 60.1695, lon: 24.9354, pop: 653000, isCapital: true },
+            { name: "Copenhagen", countryCode: "DK", country: "Danemark", lat: 55.6759, lon: 12.5655, pop: 602000, isCapital: true },
+            { name: "Rabat", countryCode: "MA", country: "Maroc", lat: 34.0132, lon: -6.8326, pop: 577000, isCapital: true },
+            { name: "Dublin", countryCode: "IE", country: "Irlande", lat: 53.3331, lon: -6.2489, pop: 544000, isCapital: true },
+            { name: "Lisbon", countryCode: "PT", country: "Portugal", lat: 38.7167, lon: -9.1333, pop: 505000, isCapital: true },
+            { name: "Canberra", countryCode: "AU", country: "Australie", lat: -35.2835, lon: 149.1281, pop: 431000, isCapital: true },
+            { name: "Wellington", countryCode: "NZ", country: "Nouvelle-Zélande", lat: -41.2866, lon: 174.7756, pop: 215000, isCapital: true },
+            { name: "Brussels", countryCode: "BE", country: "Belgique", lat: 50.8505, lon: 4.3488, pop: 185000, isCapital: true },
+            { name: "Bern", countryCode: "CH", country: "Suisse", lat: 46.9481, lon: 7.4474, pop: 133000, isCapital: true },
+            { name: "Reykjavik", countryCode: "IS", country: "Islande", lat: 64.1355, lon: -21.8954, pop: 131000, isCapital: true }
         ];
 
         // Dynamic Global Cities Stores
-        let ALL_CITIES_DB = [];       // Full dataset (up to ~25,000+ cities) for autocomplete search
-        let MAJOR_CITIES_POOL = [];   // Curated pool of ~2,500+ well-known / major world cities for secret target & clues
+        let ALL_CITIES_DB = [];          // Full dataset sorted strictly by descending population
+        let WORLD_CAPITALS_POOL = [];    // World capitals matched from the dataset, sorted strictly by descending population
+        let ACTIVE_GAME_POOL = [];       // Active pool from which secret city & 3 clues are drawn
+        let activeFetchController = null;
+        let isDatabaseInitialized = false;
 
-        // Game State Variables
+        // Game Configuration & Runtime State Variables
+        let poolSizeLimit = 1000;
+        let capitalsOnlyMode = false;
+        let difficultyMode = 'classic';  // 'classic' | 'hardcore'
+        let radarScaleMode = 'linear';   // 'linear' | 'log'
+        let historySortMode = 'recent';  // 'recent' | 'distance'
+
         let secretCity = null;
         let startingClues = [];
         let attempts = [];
-        let startTime = null;
+        let isGameOver = false;
+        let startTime = 0;
         let timerInterval = null;
         let elapsedTimeSeconds = 0;
-        let isGameOver = false;
-        let difficultyMode = 'classic'; // 'classic' (shows clue city names) | 'hardcore' (hides clue names as Indice #n)
-        let radarScaleMode = 'linear';  // 'linear' | 'log'
-        let historySortMode = 'recent'; // 'recent' | 'distance'
 
         // Normalize string (remove diacritics & lowercase for accent-insensitive search)
         function normalizeStr(str) {
-            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            return String(str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
         }
 
+        // Format population cleanly in French
         function formatPopulation(pop) {
             if (!pop || pop <= 0) return 'N/C';
-            if (pop >= 1000000) return `${(pop / 1000000).toFixed(2)} M hab.`;
+            if (pop >= 1000000) return `${(pop / 1000000).toFixed(2).replace('.', ',')} M hab.`;
             return `${pop.toLocaleString('fr-FR')} hab.`;
         }
 
-        // Load Real Global Cities Database with Explicit Population Data
+        // Rebuild Active Game Pool according to current settings (Capitals Only vs Top N by population)
+        function rebuildActiveGamePool() {
+            const poolSelect = document.getElementById('pool-size-select');
+            const badgeEl = document.getElementById('db-badge');
+            const searchInput = document.getElementById('city-search');
+
+            if (capitalsOnlyMode && WORLD_CAPITALS_POOL.length >= 10) {
+                ACTIVE_GAME_POOL = [...WORLD_CAPITALS_POOL];
+                poolSelect.disabled = true;
+                poolSelect.parentElement.classList.add('opacity-45', 'pointer-events-none');
+                badgeEl.innerText = `★ Capitales : ${ACTIVE_GAME_POOL.length} villes (par pop.)`;
+                searchInput.placeholder = `Rechercher parmi les ${ACTIVE_GAME_POOL.length} capitales mondiales...`;
+            } else {
+                poolSelect.disabled = false;
+                poolSelect.parentElement.classList.remove('opacity-45', 'pointer-events-none');
+                const limit = Math.min(poolSizeLimit, ALL_CITIES_DB.length);
+                ACTIVE_GAME_POOL = ALL_CITIES_DB.slice(0, limit);
+                badgeEl.innerText = `Pool : Top ${limit.toLocaleString('fr-FR')} / ${ALL_CITIES_DB.length.toLocaleString('fr-FR')} (par pop.)`;
+                searchInput.placeholder = `Rechercher parmi ${ALL_CITIES_DB.length.toLocaleString('fr-FR')} villes mondiales...`;
+            }
+        }
+
+        // Handler for Top N Pool Size dropdown
+        function onPoolSizeChange(val) {
+            poolSizeLimit = parseInt(val, 10) || 1000;
+            rebuildActiveGamePool();
+            initGame();
+            showToast(`Pool mis à jour : Top ${poolSizeLimit.toLocaleString('fr-FR')} villes les plus peuplées.`, "info");
+        }
+
+        // Handler for "Capitales uniquement" toggle
+        function toggleCapitalsOnly() {
+            capitalsOnlyMode = !capitalsOnlyMode;
+            const btn = document.getElementById('btn-capitals-only');
+            const star = document.getElementById('capitals-star');
+
+            if (capitalsOnlyMode) {
+                btn.className = 'px-2.5 py-1.5 text-xs font-semibold rounded-xl border border-amber-400/60 bg-amber-500/20 text-amber-300 transition flex items-center space-x-1.5 shadow-sm';
+                star.className = 'text-amber-400';
+            } else {
+                btn.className = 'px-2.5 py-1.5 text-xs font-medium rounded-xl border border-slate-700/80 bg-slate-950/90 text-slate-300 hover:text-white transition flex items-center space-x-1.5';
+                star.className = 'text-slate-500';
+            }
+
+            rebuildActiveGamePool();
+            initGame();
+            showToast(
+                capitalsOnlyMode
+                    ? `Mode ★ Capitales uniquement activé (${WORLD_CAPITALS_POOL.length} capitales).`
+                    : `Mode Villes mondiales activé (Top ${poolSizeLimit.toLocaleString('fr-FR')} par population).`,
+                "info"
+            );
+        }
+
+        // Finalize loading with fallback dataset
+        function activateFallbackDatabase(reasonMsg) {
+            if (isDatabaseInitialized) return;
+            isDatabaseInitialized = true;
+
+            ALL_CITIES_DB = FALLBACK_CITIES.map(c => ({
+                ...c,
+                normName: normalizeStr(c.name),
+                searchKey: normalizeStr(`${c.name} ${c.country}`)
+            })).sort((a, b) => b.pop - a.pop);
+
+            WORLD_CAPITALS_POOL = ALL_CITIES_DB.filter(c => c.isCapital);
+            rebuildActiveGamePool();
+            hideLoadingOverlay();
+            initGame();
+            if (reasonMsg) showToast(reasonMsg, "warning");
+        }
+
+        // Emergency skip button handler
+        function skipNetworkLoading() {
+            if (activeFetchController) {
+                try { activeFetchController.abort(); } catch (e) {}
+            }
+            activateFallbackDatabase("Base intégrée chargée (100 grandes métropoles & capitales).");
+        }
+
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('loading-overlay');
+            if (!overlay) return;
+            overlay.classList.add('opacity-0');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        // Stream-download JSON with live byte counter and timeout protection
+        async function fetchJsonWithProgress(url, label, timeoutMs = 15000) {
+            const statusEl = document.getElementById('loading-status');
+            activeFetchController = new AbortController();
+            const timeoutId = setTimeout(() => activeFetchController.abort(), timeoutMs);
+
+            try {
+                const response = await fetch(url, { signal: activeFetchController.signal });
+                if (!response.ok) {
+                    clearTimeout(timeoutId);
+                    return null;
+                }
+
+                if (!response.body) {
+                    const data = await response.json();
+                    clearTimeout(timeoutId);
+                    return data;
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let receivedBytes = 0;
+                let chunks = [];
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    receivedBytes += value.byteLength;
+                    chunks.push(decoder.decode(value, { stream: true }));
+                    const mb = (receivedBytes / (1024 * 1024)).toFixed(1);
+                    if (statusEl) {
+                        statusEl.innerText = `${label} — ${mb} Mo téléchargés...`;
+                    }
+                }
+                chunks.push(decoder.decode());
+                clearTimeout(timeoutId);
+
+                if (statusEl) statusEl.innerText = `Indexation et tri par population...`;
+                return JSON.parse(chunks.join(''));
+            } catch (err) {
+                clearTimeout(timeoutId);
+                return null;
+            }
+        }
+
+        // Load Real Global Cities Database from verified cities500.json endpoints
         async function loadGlobalCitiesDatabase() {
             const statusEl = document.getElementById('loading-status');
             const sources = [
                 {
-                    name: "GeoNames Cities15000 (CDN jsDelivr)",
-                    url: "https://cdn.jsdelivr.net/gh/lmfmaier/cities-json@master/cities15000.json",
-                    parser: (data) => data.map(item => ({
-                        name: item.name,
-                        countryCode: item.country,
-                        country: COUNTRY_NAMES_FR[item.country] || item.country,
-                        lat: parseFloat(item.lat),
-                        lon: parseFloat(item.lon || item.lng),
-                        pop: parseInt(item.pop || item.population || 0, 10)
-                    }))
+                    name: "GitHub cities500.json",
+                    url: "https://raw.githubusercontent.com/lmfmaier/cities-json/master/cities500.json",
+                    timeout: 18000
                 },
                 {
-                    name: "GeoNames Cities500 (CDN jsDelivr)",
+                    name: "GitHub refs/heads cities500.json",
                     url: "https://raw.githubusercontent.com/lmfmaier/cities-json/refs/heads/master/cities500.json",
-                    parser: (data) => data.map(item => ({
-                        name: item.name,
-                        countryCode: item.country,
-                        country: COUNTRY_NAMES_FR[item.country] || item.country,
-                        lat: parseFloat(item.lat),
-                        lon: parseFloat(item.lon || item.lng),
-                        pop: parseInt(item.pop || item.population || 0, 10)
-                    }))
+                    timeout: 15000
                 },
                 {
-                    name: "GitHub World Cities 15k (Raw)",
-                    url: "https://raw.githubusercontent.com/lmfmaier/cities-json/master/cities15000.json",
-                    //url:"https://cdn.jsdelivr.net/npm/cities.json@1.1.45/cities.json",
-                    parser: (data) => data.map(item => ({
-                        name: item.name,
-                        countryCode: item.country,
-                        country: COUNTRY_NAMES_FR[item.country] || item.country,
-                        lat: parseFloat(item.lat),
-                        lon: parseFloat(item.lon || item.lng),
-                        pop: parseInt(item.pop || item.population || 0, 10)
-                    }))
+                    name: "CDN jsDelivr cities500.json",
+                    url: "https://cdn.jsdelivr.net/gh/lmfmaier/cities-json@master/cities500.json",
+                    timeout: 15000
                 }
             ];
 
             let loadedRaw = null;
 
             for (const src of sources) {
-                try {
-                    statusEl.innerText = `Connexion à ${src.name}...`;
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 10000);
-                    const response = await fetch(src.url, { signal: controller.signal });
-                    clearTimeout(timeoutId);
-
-                    if (!response.ok) continue;
-                    const json = await response.json();
-                    if (Array.isArray(json) && json.length > 500) {
-                        const parsed = src.parser(json);
-                        // Verify that population metadata is genuinely present in this dataset
-                        const hasValidPopulation = parsed.slice(0, 50).some(c => c.pop > 10000);
-                        if (!hasValidPopulation) continue;
-
-                        statusEl.innerText = `Tri par population de ${parsed.length.toLocaleString('fr-FR')} villes mondiales...`;
-                        loadedRaw = parsed;
-                        break;
-                    }
-                } catch (err) {
-                    console.warn(`Source ${src.name} indisponible :`, err);
+                if (isDatabaseInitialized) return;
+                if (statusEl) statusEl.innerText = `Connexion à ${src.name}...`;
+                const json = await fetchJsonWithProgress(src.url, src.name, src.timeout);
+                if (Array.isArray(json) && json.length > 500) {
+                    loadedRaw = json;
+                    break;
                 }
             }
+
+            if (isDatabaseInitialized) return;
 
             if (loadedRaw && loadedRaw.length > 500) {
-                // 1. Deduplicate same city+country keeping the entry with the highest population
+                // Yield one animation frame so the UI text updates before synchronous indexing
+                await new Promise(resolve => requestAnimationFrame(resolve));
+
+                const normalizedCapitalsByCountry = {};
+                for (const [cc, capList] of Object.entries(WORLD_CAPITALS_BY_COUNTRY)) {
+                    normalizedCapitalsByCountry[cc] = new Set(capList.map(n => normalizeStr(n)));
+                }
+
+                // Parse & deduplicate keeping highest population entry per (city + country)
                 const seen = new Map();
-                for (const c of loadedRaw) {
-                    if (!c.name || isNaN(c.lat) || isNaN(c.lon)) continue;
-                    const key = `${c.name.toLowerCase()}|${c.countryCode}`;
+                for (let i = 0; i < loadedRaw.length; i++) {
+                    const item = loadedRaw[i];
+                    const name = (item.name || '').trim();
+                    const countryCode = (item.country || item.countryCode || '').trim().toUpperCase();
+                    const lat = parseFloat(item.lat);
+                    const lon = parseFloat(item.lon !== undefined ? item.lon : item.lng);
+                    const pop = parseInt(item.pop !== undefined ? item.pop : (item.population || 0), 10) || 0;
+
+                    if (!name || !countryCode || isNaN(lat) || isNaN(lon)) continue;
+
+                    const normName = normalizeStr(name);
+                    const key = `${normName}|${countryCode}`;
                     const existing = seen.get(key);
-                    if (!existing || (c.pop || 0) > (existing.pop || 0)) {
-                        c.searchKey = normalizeStr(`${c.name} ${c.country}`);
-                        seen.set(key, c);
+
+                    if (!existing || pop > existing.pop) {
+                        const countryFr = COUNTRY_NAMES_FR[countryCode] || countryCode;
+                        const capSet = normalizedCapitalsByCountry[countryCode];
+                        const isCap = capSet ? capSet.has(normName) : false;
+
+                        seen.set(key, {
+                            name: name,
+                            countryCode: countryCode,
+                            country: countryFr,
+                            lat: lat,
+                            lon: lon,
+                            pop: pop,
+                            isCapital: isCap,
+                            normName: normName,
+                            searchKey: `${normName} ${normalizeStr(countryFr)}`
+                        });
                     }
                 }
 
-                // 2. Sort the ENTIRE worldwide dataset by descending population BEFORE slicing anything
-                const uniqueCities = Array.from(seen.values());
-                uniqueCities.sort((a, b) => (b.pop || 0) - (a.pop || 0));
+                // Sort ALL unique cities strictly by descending population
+                const uniqueSortedByPop = Array.from(seen.values()).sort((a, b) => b.pop - a.pop);
 
-                // 3. Keep top 30,000 cities sorted by population for instant autocomplete search
-                ALL_CITIES_DB = uniqueCities.slice(0, TAILLE_POOL_AUTOCOMPLETE
-                );
+                // Extract all matched world capitals (already sorted by descending population)
+                const seenCapitalCountries = new Set();
+                WORLD_CAPITALS_POOL = [];
+                for (const city of uniqueSortedByPop) {
+                    if (city.isCapital && !seenCapitalCountries.has(city.countryCode)) {
+                        seenCapitalCountries.add(city.countryCode);
+                        WORLD_CAPITALS_POOL.push(city);
+                    }
+                }
 
-                // 4. Select the top 1,000 most populous global metropolises for secret cities & clues
-                MAJOR_CITIES_POOL = ALL_CITIES_DB.slice(0, TAILLE_POOL_JEU);
-
-                document.getElementById('db-badge').innerText = `Base : ${ALL_CITIES_DB.length.toLocaleString('fr-FR')} villes (Top 1000 cibles)`;
+                // Keep top 35,000 most populated cities in memory for fast autocomplete search
+                ALL_CITIES_DB = uniqueSortedByPop.slice(0, 35000);
+                isDatabaseInitialized = true;
+                rebuildActiveGamePool();
+                hideLoadingOverlay();
+                initGame();
             } else {
-                // Offline fallback sorted by descending population
-                ALL_CITIES_DB = [...FALLBACK_CITIES]
-                    .sort((a, b) => (b.pop || 0) - (a.pop || 0))
-                    .map(c => ({
-                        ...c,
-                        searchKey: normalizeStr(`${c.name} ${c.country}`)
-                    }));
-                MAJOR_CITIES_POOL = [...ALL_CITIES_DB];
-                document.getElementById('db-badge').innerText = `Mode Secours (${ALL_CITIES_DB.length} villes)`;
-                showToast("Mode hors-ligne : base de données locale chargée.", "warning");
+                activateFallbackDatabase("Réseau lent ou indisponible : base intégrée chargée.");
             }
-
-            // Hide loading overlay smoothly
-            const overlay = document.getElementById('loading-overlay');
-            overlay.classList.add('opacity-0');
-            setTimeout(() => overlay.classList.add('hidden'), 300);
-
-            initGame();
         }
 
         // Math & Geodesy Functions
@@ -783,23 +1047,23 @@
 
         // Initialize Game
         function initGame() {
-            if (MAJOR_CITIES_POOL.length === 0) return;
+            if (ACTIVE_GAME_POOL.length === 0) return;
 
             isGameOver = false;
             attempts = [];
             elapsedTimeSeconds = 0;
             clearInterval(timerInterval);
 
-            // Select random secret city from major world cities
-            const randomIndex = Math.floor(Math.random() * MAJOR_CITIES_POOL.length);
-            secretCity = MAJOR_CITIES_POOL[randomIndex];
+            // Select random secret city from the active pool (Top N by population or World Capitals)
+            const randomIndex = Math.floor(Math.random() * ACTIVE_GAME_POOL.length);
+            secretCity = ACTIVE_GAME_POOL[randomIndex];
 
-            // Select 3 well-distributed random starting clues from major cities
-            let availableForClues = MAJOR_CITIES_POOL.filter(c => c.name !== secretCity.name);
+            // Select 3 well-distributed random starting clues from the same active pool
+            let availableForClues = ACTIVE_GAME_POOL.filter(c => !(c.name === secretCity.name && c.countryCode === secretCity.countryCode));
             startingClues = [];
             for (let i = 0; i < 3; i++) {
                 if (availableForClues.length === 0) break;
-                // Pick 5 candidates and choose the one with best angular separation from existing clues
+                // Pick 6 candidates and choose the one with best angular separation from existing clues
                 let bestCandidate = null;
                 let bestScore = -1;
                 for (let k = 0; k < 6; k++) {
@@ -825,7 +1089,7 @@
                     bearing: bearing,
                     compass: compass
                 });
-                availableForClues = availableForClues.filter(c => c.name !== bestCandidate.name);
+                availableForClues = availableForClues.filter(c => !(c.name === bestCandidate.name && c.countryCode === bestCandidate.countryCode));
             }
 
             // Start timer
@@ -894,7 +1158,7 @@
         }
 
         // Tooltip Helpers
-        function showRadarTooltip(evt, title, typeLabel, dist, bearing, compass, coords, popText) {
+        function showRadarTooltip(evt, title, typeLabel, dist, bearing, compass, popText, coords) {
             const tooltip = document.getElementById('radar-tooltip');
             const wrapper = document.getElementById('radar-wrapper');
             const rect = wrapper.getBoundingClientRect();
@@ -903,7 +1167,7 @@
             document.getElementById('tt-type').innerText = typeLabel;
             document.getElementById('tt-dist').innerText = `${dist.toLocaleString('fr-FR')} km`;
             document.getElementById('tt-bearing').innerText = `${compass.code} (${Math.round(bearing)}°) ${compass.arrow}`;
-            document.getElementById('tt-pop').innerText = popText || 'N/C';
+            document.getElementById('tt-pop').innerText = popText;
             document.getElementById('tt-coords').innerText = coords;
 
             tooltip.classList.remove('hidden');
@@ -911,7 +1175,7 @@
             let left = evt.clientX - rect.left + 14;
             let top = evt.clientY - rect.top - 14;
 
-            if (left + 195 > rect.width) left = evt.clientX - rect.left - 200;
+            if (left + 205 > rect.width) left = evt.clientX - rect.left - 210;
             if (top + 125 > rect.height) top = rect.height - 130;
             if (top < 8) top = 8;
 
@@ -971,8 +1235,8 @@
                 const showRealName = (difficultyMode === 'classic' || isGameOver);
                 const cityLabel = showRealName ? `${clue.city.name}` : `Indice #${idx + 1}`;
                 const fullTooltipTitle = showRealName ? `${clue.city.name}, ${clue.city.country}` : `Indice #${idx + 1} (Mode Hardcore)`;
-                const coordsText = showRealName ? formatCoords(clue.city.lat, clue.city.lon) : 'Coordonnées masquées';
                 const popText = showRealName ? formatPopulation(clue.city.pop) : 'Masquée';
+                const coordsText = showRealName ? formatCoords(clue.city.lat, clue.city.lon) : 'Coordonnées masquées';
 
                 const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 g.setAttribute('class', 'cursor-pointer transition-opacity hover:opacity-100');
@@ -1008,7 +1272,7 @@
                 text.setAttribute('text-anchor', x >= 0 ? 'start' : 'end');
                 text.textContent = `${cityLabel} (${dist.toLocaleString('fr-FR')} km)`;
 
-                g.addEventListener('mousemove', (e) => showRadarTooltip(e, fullTooltipTitle, `Indice Initial #${idx + 1}`, dist, bearing, clue.compass, coordsText, popText));
+                g.addEventListener('mousemove', (e) => showRadarTooltip(e, fullTooltipTitle, `Indice Initial #${idx + 1}`, dist, bearing, clue.compass, popText, coordsText));
                 g.addEventListener('mouseleave', hideRadarTooltip);
 
                 g.appendChild(line);
@@ -1067,8 +1331,8 @@
                     dist,
                     bearing,
                     att.compass,
-                    formatCoords(att.city.lat, att.city.lon),
-                    formatPopulation(att.city.pop)
+                    formatPopulation(att.city.pop),
+                    formatCoords(att.city.lat, att.city.lon)
                 ));
                 g.addEventListener('mouseleave', hideRadarTooltip);
 
@@ -1083,16 +1347,23 @@
         function makeGuess(cityOrName) {
             if (isGameOver) return;
 
+            const searchPool = capitalsOnlyMode ? WORLD_CAPITALS_POOL : ALL_CITIES_DB;
+
             let matchedCity = null;
             if (typeof cityOrName === 'object' && cityOrName !== null) {
                 matchedCity = cityOrName;
             } else {
-                const normQuery = normalizeStr(cityOrName.trim());
-                matchedCity = ALL_CITIES_DB.find(c => normalizeStr(c.name) === normQuery);
+                const normQuery = normalizeStr(cityOrName);
+                matchedCity = searchPool.find(c => c.normName === normQuery);
             }
 
             if (!matchedCity) {
-                showToast(`La ville "${cityOrName}" est introuvable dans la base de données.`, "error");
+                showToast(
+                    capitalsOnlyMode
+                        ? `"${cityOrName}" n'est pas reconnue comme une capitale mondiale.`
+                        : `La ville "${cityOrName}" est introuvable dans la base de données.`,
+                    "error"
+                );
                 return;
             }
 
@@ -1223,8 +1494,8 @@
             }
 
             document.getElementById('modal-secret-city').innerText = `${secretCity.name}, ${secretCity.country}`;
-            document.getElementById('modal-secret-coords').innerText = formatCoords(secretCity.lat, secretCity.lon);
             document.getElementById('modal-secret-pop').innerText = formatPopulation(secretCity.pop);
+            document.getElementById('modal-secret-coords').innerText = formatCoords(secretCity.lat, secretCity.lon);
             document.getElementById('modal-attempts').innerText = attempts.length;
             document.getElementById('modal-time').innerText = timeStr;
 
@@ -1266,13 +1537,15 @@
                 return;
             }
 
+            // Filter either World Capitals or Full Database (both already sorted by descending population)
+            const sourceList = capitalsOnlyMode ? WORLD_CAPITALS_POOL : ALL_CITIES_DB;
+
             // Prioritize prefix matches first, then substring matches
             const prefixMatches = [];
             const subMatches = [];
-            for (let i = 0; i < ALL_CITIES_DB.length; i++) {
-                const c = ALL_CITIES_DB[i];
-                const normName = normalizeStr(c.name);
-                if (normName.startsWith(query)) {
+            for (let i = 0; i < sourceList.length; i++) {
+                const c = sourceList[i];
+                if (c.normName.startsWith(query)) {
                     prefixMatches.push(c);
                 } else if (c.searchKey.includes(query)) {
                     subMatches.push(c);
@@ -1283,7 +1556,7 @@
             const matches = [...prefixMatches, ...subMatches].slice(0, 8);
 
             if (matches.length === 0) {
-                autocompleteResults.innerHTML = `<div class="p-3 text-xs text-slate-500 italic">Aucune ville correspondante</div>`;
+                autocompleteResults.innerHTML = `<div class="p-3 text-xs text-slate-500 italic">${capitalsOnlyMode ? 'Aucune capitale correspondante' : 'Aucune ville correspondante'}</div>`;
                 autocompleteResults.classList.remove('hidden');
                 return;
             }
@@ -1291,13 +1564,14 @@
             autocompleteResults.innerHTML = '';
             matches.forEach(city => {
                 const div = document.createElement('div');
-                div.className = 'px-4 py-2.5 hover:bg-slate-800/90 cursor-pointer flex items-center justify-between transition text-sm';
+                div.className = 'px-4 py-2.5 hover:bg-slate-800/90 cursor-pointer flex items-center justify-between transition text-sm gap-2';
+                const capBadge = city.isCapital ? `<span class="text-[10px] text-amber-400 font-semibold ml-1" title="Capitale">★</span>` : '';
                 div.innerHTML = `
-                    <div class="flex flex-col min-w-0 pr-2">
-                        <span class="font-medium text-white truncate">${city.name}</span>
-                        <span class="text-[10px] text-slate-500 font-mono">${formatPopulation(city.pop)}</span>
+                    <div class="min-w-0 truncate">
+                        <span class="font-medium text-white">${city.name}</span>${capBadge}
+                        <span class="text-xs text-slate-400 ml-1">${city.country}</span>
                     </div>
-                    <span class="text-xs text-slate-400 font-mono shrink-0">${city.country}</span>
+                    <span class="text-[11px] text-slate-500 font-mono shrink-0">${formatPopulation(city.pop)}</span>
                 `;
                 div.addEventListener('click', function() {
                     searchInput.value = city.name;
