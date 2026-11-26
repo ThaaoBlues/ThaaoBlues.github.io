@@ -478,7 +478,7 @@
             <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 space-y-3.5 mb-4">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-semibold uppercase tracking-wider text-indigo-400">1. Créer une course</span>
-                    <button onclick="regenerateChallengeSeed()" class="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 flex items-center space-x-1">
+                    <button type="button" onclick="regenerateChallengeSeed()" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-[11px] font-mono text-cyan-400 hover:text-cyan-300 flex items-center space-x-1 transition cursor-pointer">
                         <span>↻ Nouvelle graine</span>
                     </button>
                 </div>
@@ -502,7 +502,7 @@
                     </div>
                     <div>
                         <label for="challenge-seed-input" class="block text-xs text-slate-400 mb-1">Graine aléatoire (Seed)</label>
-                        <input type="text" id="challenge-seed-input" oninput="updateGeneratedChallengeUrl()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-amber-300 focus:border-indigo-400 focus:outline-none" placeholder="ex: GEO42">
+                        <input type="text" id="challenge-seed-input" autocomplete="off" spellcheck="false" oninput="updateGeneratedChallengeUrl()" onchange="updateGeneratedChallengeUrl()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-amber-300 focus:border-indigo-400 focus:outline-none" placeholder="ex: GEO42">
                     </div>
                 </div>
 
@@ -1037,6 +1037,8 @@
 
         function openChallengeModal() {
             const seedInput = document.getElementById('challenge-seed-input');
+            seedInput.removeAttribute('readonly');
+            seedInput.removeAttribute('disabled');
             if (!seedInput.value.trim()) {
                 seedInput.value = generateRandomSeedCode();
             }
@@ -1050,7 +1052,8 @@
         }
 
         function regenerateChallengeSeed() {
-            document.getElementById('challenge-seed-input').value = generateRandomSeedCode();
+            const seedInput = document.getElementById('challenge-seed-input');
+            seedInput.value = generateRandomSeedCode();
             updateGeneratedChallengeUrl();
         }
 
@@ -1684,11 +1687,11 @@
             }
         }
 
-        // Check if page was opened with a shared multiplayer challenge link (#challenge=...)
+        // Check if page was opened with a #challenge=... link, otherwise launch Solo
         function checkUrlChallengeOrInit() {
-            const hash = window.location.hash || '';
-            if (hash.includes('challenge=')) {
-                const parsed = parseChallengeFromText(hash);
+            const hashStr = window.location.hash || '';
+            if (hashStr.includes('challenge=')) {
+                const parsed = parseChallengeFromText(hashStr);
                 if (parsed) {
                     applyChallengeConfigAndLaunch(parsed);
                     return;
@@ -1724,42 +1727,43 @@
 
             updateUI();
             drawRadar();
+            if (projectionMode === '3d') {
+                initOrUpdateGlobe3D(false);
+            }
         }
 
-        // Toggle 2D Radar vs 3D Sphere Projection
+        // Toggle 2D Polar Radar vs 3D Geodesic Sphere Projection
         function setProjectionMode(mode) {
             projectionMode = mode;
             const btn2d = document.getElementById('btn-proj-2d');
             const btn3d = document.getElementById('btn-proj-3d');
             const canvas2d = document.getElementById('radarCanvas');
-            const centerDot2d = document.getElementById('radar-center-indicator');
-            const globe3d = document.getElementById('globe3d-container');
+            const centerInd = document.getElementById('radar-center-indicator');
+            const container3d = document.getElementById('globe3d-container');
             const scaleGroup = document.getElementById('scale-toggle-group');
             const scaleBadge = document.getElementById('radar-scale-badge');
-            const targetLabel = document.getElementById('radar-target-label');
+            const tooltip = document.getElementById('radar-tooltip');
 
-            document.getElementById('radar-tooltip').classList.add('hidden');
+            tooltip.classList.add('hidden');
 
-            if (mode === '2d') {
-                btn2d.className = 'px-2 py-0.5 rounded-md bg-cyan-500 text-slate-950 font-semibold transition';
-                btn3d.className = 'px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition';
-                canvas2d.classList.remove('hidden');
-                centerDot2d.classList.remove('hidden');
-                globe3d.classList.add('hidden');
-                scaleGroup.classList.remove('hidden');
-                scaleBadge.innerHTML = 'Échelle max: <span id="radar-max-dist" class="text-slate-200 font-semibold">--- km</span>';
-                targetLabel.innerHTML = 'Cible : <strong class="text-cyan-400">Centre (0 km)</strong>';
-                resizeAndDrawRadar();
-            } else {
+            if (mode === '3d') {
                 btn3d.className = 'px-2 py-0.5 rounded-md bg-cyan-500 text-slate-950 font-semibold transition';
                 btn2d.className = 'px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition';
                 canvas2d.classList.add('hidden');
-                centerDot2d.classList.add('hidden');
-                globe3d.classList.remove('hidden');
+                centerInd.classList.add('hidden');
+                container3d.classList.remove('hidden');
                 scaleGroup.classList.add('hidden');
-                scaleBadge.innerHTML = 'Rayon : <span class="text-cyan-300 font-semibold">6 371 km</span>';
-                targetLabel.innerHTML = 'Cible : <strong class="text-cyan-400">Pôle Cyan (3D)</strong>';
+                scaleBadge.innerHTML = 'Projection: <span class="text-cyan-300 font-semibold">Sphère 3D</span>';
                 initOrUpdateGlobe3D(true);
+            } else {
+                btn2d.className = 'px-2 py-0.5 rounded-md bg-cyan-500 text-slate-950 font-semibold transition';
+                btn3d.className = 'px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition';
+                container3d.classList.add('hidden');
+                canvas2d.classList.remove('hidden');
+                centerInd.classList.remove('hidden');
+                scaleGroup.classList.remove('hidden');
+                scaleBadge.innerHTML = 'Échelle max: <span id="radar-max-dist" class="text-slate-200 font-semibold">--- km</span>';
+                resizeAndDrawRadar();
             }
         }
 
@@ -1828,7 +1832,7 @@
             return dirs[index];
         }
 
-        // Initialize or Restart Game
+        // Initialize or Restart Round (supports both Solo random and Seeded Multiplayer)
         function initGame() {
             if (ACTIVE_GAME_POOL.length < 4) {
                 showToast("Pas assez de villes dans cette zone pour lancer une partie (minimum 4 requises).", "error");
@@ -1844,21 +1848,15 @@
             document.getElementById('victory-modal').classList.add('hidden');
             clearSearchInput();
             hideToast();
+            updateMultiplayerBanner();
 
-            // Use deterministic seeded RNG in Multiplayer Race mode, or Math.random() in Solo
-            const randFn = (multiplayerState.active && multiplayerState.rng) ? multiplayerState.rng : Math.random;
+            // Use deterministic RNG in Multiplayer Race mode, or Math.random() in Solo
+            const randFn = (multiplayerState.active && typeof multiplayerState.rng === 'function')
+                ? multiplayerState.rng
+                : Math.random;
 
-            // Pick a secret city from the active pool (avoid repeating cities already played in the same race)
-            const alreadyUsedNames = new Set(
-                multiplayerState.active ? multiplayerState.roundHistory.map(r => `${r.city.name}|${r.city.countryCode}`) : []
-            );
-
-            let secretIdx = Math.floor(randFn() * ACTIVE_GAME_POOL.length);
-            let guard = 0;
-            while (alreadyUsedNames.has(`${ACTIVE_GAME_POOL[secretIdx].name}|${ACTIVE_GAME_POOL[secretIdx].countryCode}`) && guard < 50) {
-                secretIdx = Math.floor(randFn() * ACTIVE_GAME_POOL.length);
-                guard++;
-            }
+            // Pick a secret city from the active pool
+            const secretIdx = Math.floor(randFn() * ACTIVE_GAME_POOL.length);
             secretCity = ACTIVE_GAME_POOL[secretIdx];
 
             // Pick 3 distinct clue cities from the active pool
@@ -1883,15 +1881,16 @@
 
             // Start or Resume Timer
             if (timerInterval) clearInterval(timerInterval);
-            startTime = Date.now();
             if (multiplayerState.active) {
-                multiplayerState.roundStartTime = startTime;
-                updateMultiplayerBanner();
+                multiplayerState.roundStartTime = Date.now();
+                timerInterval = setInterval(updateTimer, 100);
+            } else {
+                startTime = Date.now();
+                timerInterval = setInterval(updateTimer, 1000);
             }
-            timerInterval = setInterval(updateTimer, 100);
             updateTimer();
 
-            // Update UI & Render Radar
+            // Update UI & Render Radar / 3D Globe
             updateUI();
             resizeAndDrawRadar();
             if (projectionMode === '3d') {
@@ -2251,7 +2250,10 @@
             // Round up nicely (to nearest 100 km if < 2000 km, else nearest 1000 km)
             const stepUnit = maxDistFound < 2000 ? 250 : 1000;
             const maxScaleDist = Math.ceil(maxDistFound / stepUnit) * stepUnit;
-            document.getElementById('radar-max-dist').innerText = `${maxScaleDist.toLocaleString('fr-FR')} km`;
+            const maxDistEl = document.getElementById('radar-max-dist');
+            if (maxDistEl) {
+                maxDistEl.innerText = `${maxScaleDist.toLocaleString('fr-FR')} km`;
+            }
 
             // 2. Concentric Range Rings (4 rings)
             const ringCount = 4;
