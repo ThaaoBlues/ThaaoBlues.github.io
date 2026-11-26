@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GeoCity - Jeu de Géolocalisation & Radar Vectoriel</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -61,6 +62,25 @@
                 0 0 40px rgba(6, 182, 212, 0.15),
                 inset 0 0 30px rgba(6, 182, 212, 0.1);
         }
+        #globe3d-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 9999px;
+            overflow: hidden;
+            cursor: grab;
+            touch-action: none;
+            box-shadow:
+                0 0 45px rgba(6, 182, 212, 0.18),
+                inset 0 0 35px rgba(6, 182, 212, 0.12);
+            background: radial-gradient(circle at 35% 30%, #0f172a 0%, #020617 85%);
+        }
+        #globe3d-container:active {
+            cursor: grabbing;
+        }
+        #globe3d-container canvas {
+            box-shadow: none;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-white">
@@ -100,12 +120,37 @@
                         <span class="hidden sm:inline">Règles</span>
                     </button>
 
+                    <button onclick="openChallengeModal()" class="px-2.5 sm:px-3 py-2 text-xs font-semibold text-indigo-300 hover:text-white bg-indigo-950/70 hover:bg-indigo-600/80 rounded-xl border border-indigo-500/40 transition flex items-center space-x-1.5 shadow-sm" title="Créer ou rejoindre un défi multijoueur par lien">
+                        <svg class="w-4 h-4 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span class="hidden sm:inline">Défi Multi</span>
+                        <span class="sm:hidden">Multi</span>
+                    </button>
+
                     <button onclick="restartGame()" class="px-2.5 sm:px-3.5 py-2 text-xs font-semibold text-cyan-300 hover:text-black bg-cyan-950/60 hover:bg-cyan-400 rounded-xl border border-cyan-500/30 transition flex items-center space-x-1.5 shadow-sm">
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                         </svg>
                         <span class="hidden sm:inline">Nouvelle Partie</span>
                         <span class="sm:hidden">Rejouer</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Active Multiplayer Challenge Banner (Shown when playing a shared challenge) -->
+            <div id="challenge-active-banner" class="hidden mt-2.5 px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-950/90 via-slate-900/90 to-cyan-950/90 border border-indigo-500/40 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div class="flex items-center space-x-2 min-w-0">
+                    <span class="px-2 py-0.5 rounded-md bg-indigo-500 text-white font-bold uppercase tracking-wider text-[10px] shrink-0">Course Multi</span>
+                    <span id="challenge-banner-info" class="text-slate-200 font-medium truncate">Tour 1 / 5 &bull; Graine #------</span>
+                </div>
+                <div class="flex items-center space-x-2 shrink-0">
+                    <button onclick="copyActiveChallengeLink()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 font-medium transition flex items-center space-x-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                        <span>Copier lien</span>
+                    </button>
+                    <button onclick="exitChallengeMode()" class="px-2.5 py-1 rounded-lg bg-red-950/60 hover:bg-red-900/70 text-red-300 border border-red-500/30 font-medium transition">
+                        Quitter
                     </button>
                 </div>
             </div>
@@ -224,14 +269,19 @@
                           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                           <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
                         </span>
-                        <span class="text-xs font-mono uppercase tracking-wider text-slate-400">Cible : <strong class="text-cyan-400">Centre (0 km)</strong></span>
+                        <span id="radar-target-label" class="text-xs font-mono uppercase tracking-wider text-slate-400">Cible : <strong class="text-cyan-400">Centre (0 km)</strong></span>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <div class="flex items-center bg-slate-950/90 p-0.5 rounded-lg border border-slate-800 text-[11px]">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <!-- 2D Radar vs 3D Sphere Projection Toggle -->
+                        <div class="flex items-center bg-slate-950/90 p-0.5 rounded-lg border border-slate-800 text-[11px]" title="Basculer entre le radar polaire 2D et la sphère géodésique 3D interactive">
+                            <button id="btn-proj-2d" onclick="setProjectionMode('2d')" class="px-2 py-0.5 rounded-md bg-cyan-500 text-slate-950 font-semibold transition">Radar 2D</button>
+                            <button id="btn-proj-3d" onclick="setProjectionMode('3d')" class="px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition">Sphère 3D</button>
+                        </div>
+                        <div id="scale-toggle-group" class="flex items-center bg-slate-950/90 p-0.5 rounded-lg border border-slate-800 text-[11px]">
                             <button id="btn-scale-linear" onclick="setRadarScale('linear')" class="px-2 py-0.5 rounded-md bg-slate-800 text-cyan-300 font-semibold transition">Linéaire</button>
                             <button id="btn-scale-log" onclick="setRadarScale('log')" class="px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition">Log</button>
                         </div>
-                        <div class="text-xs font-mono text-slate-400 bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800">
+                        <div id="radar-scale-badge" class="text-xs font-mono text-slate-400 bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800">
                             Échelle max: <span id="radar-max-dist" class="text-slate-200 font-semibold">--- km</span>
                         </div>
                     </div>
@@ -240,13 +290,21 @@
                 <!-- Radar Canvas Wrapper -->
                 <div id="radar-container" class="my-2">
                     <canvas id="radarCanvas"></canvas>
+
+                    <!-- 3D Sphere Interactive Viewport (Hidden in 2D mode) -->
+                    <div id="globe3d-container" class="hidden">
+                        <div id="globe3d-labels-layer" class="pointer-events-none absolute inset-0 overflow-hidden"></div>
+                        <div class="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 bg-slate-950/80 border border-slate-800/90 text-[10px] font-mono text-slate-400 px-2.5 py-1 rounded-full whitespace-nowrap">
+                            Glisser pour pivoter la sphère &bull; Arcs réels (R = 6 371 km)
+                        </div>
+                    </div>
                     
                     <!-- Interactive Hover Tooltip on Radar -->
                     <div id="radar-tooltip" class="pointer-events-none hidden absolute z-30 bg-slate-950/95 border border-cyan-500/40 rounded-xl px-3 py-2 text-xs shadow-xl backdrop-blur-md min-w-[165px]">
                     </div>
 
                     <!-- Center Target Overlay Indicator -->
-                    <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <div id="radar-center-indicator" class="pointer-events-none absolute inset-0 flex items-center justify-center">
                         <div class="w-4 h-4 rounded-full border-2 border-cyan-400 bg-cyan-500/20 animate-pulse-slow"></div>
                     </div>
                 </div>
@@ -276,7 +334,11 @@
             <div class="lg:col-span-5 flex flex-col space-y-5">
                 
                 <!-- Game Stats Card -->
-                <div class="grid grid-cols-3 gap-3 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 backdrop-blur-sm">
+                <div id="stats-grid" class="grid grid-cols-3 gap-3 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 backdrop-blur-sm">
+                    <div id="stat-round-card" class="hidden text-center p-2 bg-indigo-950/40 rounded-xl border border-indigo-500/30">
+                        <p class="text-xs text-indigo-300">Tour</p>
+                        <p id="stat-round" class="text-xl font-bold font-mono text-indigo-300 mt-0.5">1/5</p>
+                    </div>
                     <div class="text-center p-2 bg-slate-950/50 rounded-xl border border-slate-800/60">
                         <p class="text-xs text-slate-400">Essais</p>
                         <p id="stat-attempts" class="text-xl font-bold font-mono text-white mt-0.5">0</p>
@@ -286,7 +348,7 @@
                         <p id="stat-best-dist" class="text-xl font-bold font-mono text-cyan-400 mt-0.5">---</p>
                     </div>
                     <div class="text-center p-2 bg-slate-950/50 rounded-xl border border-slate-800/60">
-                        <p class="text-xs text-slate-400">Temps</p>
+                        <p id="stat-timer-label" class="text-xs text-slate-400">Temps</p>
                         <p id="stat-timer" class="text-xl font-bold font-mono text-slate-300 mt-0.5">00:00</p>
                     </div>
                 </div>
@@ -393,9 +455,89 @@
         </div>
     </div>
 
-    <!-- Victory Modal -->
+    <!-- Multiplayer Challenge Setup & Join Modal -->
+    <div id="challenge-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-indigo-500/40 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+            <button onclick="closeChallengeModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-white">Défi Multijoueur (Course Chrono)</h3>
+                    <p class="text-xs text-slate-400">Mêmes villes, mêmes paramètres, même graine aléatoire.</p>
+                </div>
+            </div>
+
+            <!-- Create Challenge Section -->
+            <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 space-y-3.5 mb-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-indigo-400">1. Créer une course</span>
+                    <button onclick="regenerateChallengeSeed()" class="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 flex items-center space-x-1">
+                        <span>↻ Nouvelle graine</span>
+                    </button>
+                </div>
+
+                <!-- Summary of current solo filters that will be locked into the link -->
+                <div class="bg-slate-900/90 border border-slate-800/90 rounded-xl p-3 text-xs space-y-1">
+                    <p class="text-slate-400">Configuration active verrouillée dans le lien :</p>
+                    <p id="challenge-config-summary" class="font-semibold text-cyan-300">Monde &bull; Top 1 000 &bull; Classique</p>
+                </div>
+
+                <!-- Rounds & Seed Row -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="challenge-rounds-select" class="block text-xs text-slate-400 mb-1">Nombre de tours</label>
+                        <select id="challenge-rounds-select" onchange="updateGeneratedChallengeUrl()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-white focus:border-indigo-400 focus:outline-none">
+                            <option value="3">3 tours (Sprint)</option>
+                            <option value="5" selected>5 tours (Standard)</option>
+                            <option value="7">7 tours (Endurance)</option>
+                            <option value="10">10 tours (Marathon)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="challenge-seed-input" class="block text-xs text-slate-400 mb-1">Graine aléatoire (Seed)</label>
+                        <input type="text" id="challenge-seed-input" oninput="updateGeneratedChallengeUrl()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-amber-300 focus:border-indigo-400 focus:outline-none" placeholder="ex: GEO42">
+                    </div>
+                </div>
+
+                <!-- Generated Share URL -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Lien de défi à envoyer aux autres joueurs :</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="challenge-share-url" readonly class="flex-grow bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-[11px] font-mono text-slate-300 select-all focus:outline-none">
+                        <button onclick="copyChallengeModalUrl()" id="btn-copy-modal-url" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-semibold rounded-xl border border-slate-600 transition shrink-0">
+                            Copier
+                        </button>
+                    </div>
+                </div>
+
+                <button onclick="startCreatedChallenge()" class="w-full py-3 bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-400 hover:to-cyan-400 text-slate-950 font-bold text-sm rounded-xl shadow-lg shadow-indigo-500/25 transition transform active:scale-95">
+                    Copier le lien &amp; Lancer ma course !
+                </button>
+            </div>
+
+            <!-- Join Existing Challenge Section -->
+            <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 space-y-2.5">
+                <span class="block text-xs font-semibold uppercase tracking-wider text-slate-400">2. Rejoindre via un lien ou un code reçu</span>
+                <div class="flex space-x-2">
+                    <input type="text" id="challenge-join-input" placeholder="Collez ici l'URL ou le code du défi..." class="flex-grow bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none">
+                    <button onclick="joinChallengeFromInput()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-xl transition shrink-0">
+                        Rejoindre
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory / Round Transition Modal -->
     <div id="victory-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-cyan-500/40 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl text-center relative overflow-hidden">
+        <div class="bg-slate-900 border border-cyan-500/40 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl text-center relative overflow-hidden max-h-[92vh] overflow-y-auto">
             <div class="absolute -top-24 -left-24 w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
             <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -403,31 +545,48 @@
                 <svg class="w-9 h-9 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
             </div>
 
-            <h2 class="text-2xl font-bold text-white mb-1">Cible Localisée !</h2>
-            <p class="text-sm text-slate-400 mb-5">Vous avez identifié la ville secrète avec précision.</p>
+            <h2 id="victory-modal-title" class="text-2xl font-bold text-white mb-1">Cible Localisée !</h2>
+            <p id="victory-modal-subtitle" class="text-sm text-slate-400 mb-5">Vous avez identifié la ville secrète avec précision.</p>
 
-            <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-4 mb-6">
-                <p class="text-xs uppercase tracking-widest text-cyan-400 font-semibold mb-1">Ville Secrète</p>
+            <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-4 mb-5">
+                <p id="victory-city-label" class="text-xs uppercase tracking-widest text-cyan-400 font-semibold mb-1">Ville Secrète</p>
                 <p id="victory-city-name" class="text-2xl font-bold text-white">Paris</p>
                 <p id="victory-country-name" class="text-sm text-slate-400">France</p>
                 <p id="victory-coords" class="text-xs font-mono text-slate-500 mt-1">48.8566° N, 2.3522° E</p>
                 <p id="victory-pop" class="text-xs font-mono text-cyan-400/90 mt-1">Population : ---</p>
             </div>
 
-            <div class="grid grid-cols-2 gap-3 mb-6">
+            <!-- Multiplayer Round-by-Round Breakdown (Visible only at the end of a multiplayer race) -->
+            <div id="multiplayer-summary-box" class="hidden bg-slate-950/90 border border-indigo-500/30 rounded-2xl p-3.5 mb-5 text-left">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-indigo-300">Détail de la course</span>
+                    <span id="multiplayer-seed-badge" class="text-[11px] font-mono text-slate-400">Graine: ---</span>
+                </div>
+                <div id="multiplayer-rounds-list" class="space-y-1.5 max-h-40 overflow-y-auto pr-1 text-xs">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-5">
                 <div class="bg-slate-800/50 rounded-xl p-3 border border-slate-700/50">
-                    <p class="text-xs text-slate-400">Nombre d'essais</p>
+                    <p id="victory-attempts-label" class="text-xs text-slate-400">Nombre d'essais</p>
                     <p id="victory-attempts" class="text-xl font-bold font-mono text-cyan-400">4</p>
                 </div>
                 <div class="bg-slate-800/50 rounded-xl p-3 border border-slate-700/50">
-                    <p class="text-xs text-slate-400">Temps écoulé</p>
+                    <p id="victory-time-label" class="text-xs text-slate-400">Temps écoulé</p>
                     <p id="victory-time" class="text-xl font-bold font-mono text-emerald-400">01:24</p>
                 </div>
             </div>
 
-            <button onclick="restartGame()" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/25 transition transform active:scale-95">
-                Rejouer une nouvelle cible
-            </button>
+            <div class="space-y-2.5">
+                <button id="victory-share-score-btn" onclick="copyMultiplayerResult()" class="hidden w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-xl border border-indigo-400/40 transition flex items-center justify-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                    <span>Copier mon temps &amp; lien du défi</span>
+                </button>
+
+                <button id="victory-primary-btn" onclick="handleVictoryPrimaryAction()" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/25 transition transform active:scale-95">
+                    Rejouer une nouvelle cible
+                </button>
+            </div>
         </div>
     </div>
 
@@ -739,6 +898,7 @@
         let maxCitiesPerCountry = 0;     // 0 = Unlimited, otherwise N max cities per country
         let capitalsOnlyMode = false;
         let difficultyMode = 'classic';  // 'classic' | 'hardcore'
+        let projectionMode = '2d';       // '2d' | '3d'
         let radarScaleMode = 'linear';   // 'linear' | 'log'
         let historySortMode = 'recent';  // 'recent' | 'distance'
 
@@ -749,6 +909,310 @@
         let startTime = 0;
         let timerInterval = null;
         let elapsedTimeSeconds = 0;
+
+        // Multiplayer Seeded Race State
+        let multiplayerState = {
+            active: false,
+            seed: '',
+            totalRounds: 5,
+            currentRound: 1,
+            roundStartTime: 0,
+            totalElapsedMs: 0,
+            roundHistory: [], // [{ round, city, attemptsCount, durationMs }]
+            rng: null
+        };
+
+        // Deterministic String Hash (FNV-1a) + Mulberry32 PRNG for shared multiplayer seeds
+        function hashSeedString(str) {
+            let h = 2166136261 >>> 0;
+            const s = String(str || 'GEOCITY');
+            for (let i = 0; i < s.length; i++) {
+                h ^= s.charCodeAt(i);
+                h = Math.imul(h, 16777619);
+            }
+            return h >>> 0;
+        }
+
+        function createMulberry32(seedInt) {
+            let a = seedInt >>> 0;
+            return function() {
+                a |= 0;
+                a = a + 0x6D2B79F5 | 0;
+                let t = Math.imul(a ^ a >>> 15, 1 | a);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        }
+
+        function generateRandomSeedCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = 'GEO-';
+            for (let i = 0; i < 6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        // Format milliseconds as MM:SS.d or MM:SS
+        function formatDurationMs(ms, includeTenths = false) {
+            const totalTenths = Math.floor(Math.max(0, ms) / 100);
+            const totalSecs = Math.floor(totalTenths / 10);
+            const tenths = totalTenths % 10;
+            const mins = String(Math.floor(totalSecs / 60)).padStart(2, '0');
+            const secs = String(totalSecs % 60).padStart(2, '0');
+            return includeTenths ? `${mins}:${secs}.${tenths}` : `${mins}:${secs}`;
+        }
+
+        // Clipboard helper compatible with iframes
+        function copyTextToClipboard(text) {
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            tempInput.style.position = 'fixed';
+            tempInput.style.opacity = '0';
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.warn('Copie presse-papiers échouée:', err);
+            }
+            document.body.removeChild(tempInput);
+        }
+
+        // Build shareable URL encoding all game settings + seed + rounds
+        function buildChallengeShareUrl(seedStr, roundsCount) {
+            const payload = {
+                v: 1,
+                s: String(seedStr || 'GEO-2026').trim(),
+                r: parseInt(roundsCount, 10) || 5,
+                gt: geoScopeType,
+                gv: geoScopeValue,
+                rg: selectedRegionCode,
+                ps: poolSizeLimit,
+                mc: maxCitiesPerCountry,
+                cp: capitalsOnlyMode ? 1 : 0,
+                df: difficultyMode
+            };
+            const jsonStr = JSON.stringify(payload);
+            const encoded = btoa(encodeURIComponent(jsonStr));
+            const baseUrl = window.location.href.split('#')[0].split('?')[0];
+            return `${baseUrl}#challenge=${encoded}`;
+        }
+
+        // Parse challenge payload from URL hash or raw pasted string
+        function parseChallengeFromText(rawText) {
+            if (!rawText) return null;
+            let token = String(rawText).trim();
+            const match = token.match(/challenge=([A-Za-z0-9+/=]+)/);
+            if (match && match[1]) {
+                token = match[1];
+            }
+            try {
+                const jsonStr = decodeURIComponent(atob(token));
+                const obj = JSON.parse(jsonStr);
+                if (obj && obj.s && obj.r) return obj;
+            } catch (e) {
+                return null;
+            }
+            return null;
+        }
+
+        function describeCurrentConfig() {
+            let scopeLabel = 'Monde';
+            if (geoScopeType === 'CONTINENT') {
+                scopeLabel = CONTINENT_NAMES_FR[geoScopeValue] || geoScopeValue;
+            } else if (geoScopeType === 'COUNTRY') {
+                const cName = COUNTRY_NAMES_FR[geoScopeValue] || geoScopeValue;
+                scopeLabel = selectedRegionCode !== 'ALL' ? `${cName} (${selectedRegionCode})` : cName;
+            }
+            const poolLabel = (capitalsOnlyMode && geoScopeType !== 'COUNTRY')
+                ? '★ Capitales'
+                : `Top ${poolSizeLimit.toLocaleString('fr-FR')}`;
+            const capLabel = (maxCitiesPerCountry > 0 && geoScopeType !== 'COUNTRY' && !capitalsOnlyMode)
+                ? ` · Max ${maxCitiesPerCountry}/pays`
+                : '';
+            const diffLabel = difficultyMode === 'classic' ? 'Classique' : 'Hardcore';
+            return `${scopeLabel} · ${poolLabel}${capLabel} · ${diffLabel}`;
+        }
+
+        function openChallengeModal() {
+            const seedInput = document.getElementById('challenge-seed-input');
+            if (!seedInput.value.trim()) {
+                seedInput.value = generateRandomSeedCode();
+            }
+            document.getElementById('challenge-config-summary').innerText = describeCurrentConfig();
+            updateGeneratedChallengeUrl();
+            document.getElementById('challenge-modal').classList.remove('hidden');
+        }
+
+        function closeChallengeModal() {
+            document.getElementById('challenge-modal').classList.add('hidden');
+        }
+
+        function regenerateChallengeSeed() {
+            document.getElementById('challenge-seed-input').value = generateRandomSeedCode();
+            updateGeneratedChallengeUrl();
+        }
+
+        function updateGeneratedChallengeUrl() {
+            const seedVal = document.getElementById('challenge-seed-input').value.trim() || 'GEO-2026';
+            const roundsVal = parseInt(document.getElementById('challenge-rounds-select').value, 10) || 5;
+            const url = buildChallengeShareUrl(seedVal, roundsVal);
+            document.getElementById('challenge-share-url').value = url;
+        }
+
+        function copyChallengeModalUrl() {
+            updateGeneratedChallengeUrl();
+            const url = document.getElementById('challenge-share-url').value;
+            copyTextToClipboard(url);
+            const btn = document.getElementById('btn-copy-modal-url');
+            btn.innerText = 'Copié !';
+            setTimeout(() => { btn.innerText = 'Copier'; }, 1800);
+        }
+
+        function startCreatedChallenge() {
+            updateGeneratedChallengeUrl();
+            const url = document.getElementById('challenge-share-url').value;
+            const seedVal = document.getElementById('challenge-seed-input').value.trim() || 'GEO-2026';
+            const roundsVal = parseInt(document.getElementById('challenge-rounds-select').value, 10) || 5;
+
+            copyTextToClipboard(url);
+            try { window.history.replaceState(null, '', `#challenge=${url.split('#challenge=')[1]}`); } catch (e) {}
+            closeChallengeModal();
+            launchMultiplayerRace(seedVal, roundsVal);
+            showToast(`Lien copié ! Course en ${roundsVal} tours lancée (Graine : ${seedVal}).`, "info");
+        }
+
+        function joinChallengeFromInput() {
+            const raw = document.getElementById('challenge-join-input').value.trim();
+            const parsed = parseChallengeFromText(raw);
+            if (!parsed) {
+                showToast("Lien ou code de défi invalide.", "error");
+                return;
+            }
+            closeChallengeModal();
+            applyChallengeConfigAndLaunch(parsed);
+        }
+
+        function applyChallengeConfigAndLaunch(cfg) {
+            // Sync UI & State with shared challenge settings
+            geoScopeType = cfg.gt || 'WORLD';
+            geoScopeValue = cfg.gv || 'WORLD';
+            selectedRegionCode = cfg.rg || 'ALL';
+            poolSizeLimit = parseInt(cfg.ps, 10) || 1000;
+            maxCitiesPerCountry = parseInt(cfg.mc, 10) || 0;
+            capitalsOnlyMode = Boolean(cfg.cp);
+            difficultyMode = cfg.df === 'hardcore' ? 'hardcore' : 'classic';
+
+            // Update Header Selectors to reflect locked challenge settings
+            const geoSelect = document.getElementById('geo-scope-select');
+            if (geoScopeType === 'WORLD') {
+                geoSelect.value = 'WORLD';
+                document.getElementById('region-select').disabled = true;
+                document.getElementById('region-select-wrapper').classList.add('opacity-45', 'pointer-events-none');
+            } else if (geoScopeType === 'CONTINENT') {
+                geoSelect.value = `CONT:${geoScopeValue}`;
+                document.getElementById('region-select').disabled = true;
+                document.getElementById('region-select-wrapper').classList.add('opacity-45', 'pointer-events-none');
+            } else if (geoScopeType === 'COUNTRY') {
+                geoSelect.value = `COUNTRY:${geoScopeValue}`;
+                populateRegionsDropdown(geoScopeValue);
+                if (selectedRegionCode !== 'ALL') {
+                    document.getElementById('region-select').value = selectedRegionCode;
+                }
+            }
+
+            document.getElementById('pool-size-select').value = String(poolSizeLimit);
+            document.getElementById('max-per-country-select').value = String(maxCitiesPerCountry);
+
+            const btnCap = document.getElementById('btn-capitals-only');
+            const starCap = document.getElementById('capitals-star');
+            if (capitalsOnlyMode) {
+                btnCap.className = 'flex-1 px-2.5 py-1.5 text-xs font-semibold rounded-xl border border-amber-400/60 bg-amber-500/20 text-amber-300 transition flex items-center justify-center space-x-1 truncate shadow-sm';
+                starCap.className = 'text-amber-400';
+            } else {
+                btnCap.className = 'flex-1 px-2.5 py-1.5 text-xs font-medium rounded-xl border border-slate-700/80 bg-slate-950/90 text-slate-300 hover:text-white transition flex items-center justify-center space-x-1 truncate';
+                starCap.className = 'text-slate-500';
+            }
+
+            setDifficultyMode(difficultyMode);
+            rebuildActiveGamePool();
+            launchMultiplayerRace(cfg.s, parseInt(cfg.r, 10) || 5);
+            showToast(`Défi rejoint ! Course de ${cfg.r} tours (Graine : ${cfg.s}).`, "info");
+        }
+
+        function launchMultiplayerRace(seedStr, totalRounds) {
+            multiplayerState = {
+                active: true,
+                seed: String(seedStr),
+                totalRounds: totalRounds,
+                currentRound: 1,
+                roundStartTime: 0,
+                totalElapsedMs: 0,
+                roundHistory: [],
+                rng: createMulberry32(hashSeedString(`${seedStr}|${describeCurrentConfig()}`))
+            };
+            updateMultiplayerBanner();
+            initGame();
+        }
+
+        function exitChallengeMode() {
+            multiplayerState.active = false;
+            try { window.history.replaceState(null, '', window.location.href.split('#')[0]); } catch (e) {}
+            updateMultiplayerBanner();
+            initGame();
+            showToast("Retour au mode Solo.", "info");
+        }
+
+        function copyActiveChallengeLink() {
+            if (!multiplayerState.active) return;
+            const url = buildChallengeShareUrl(multiplayerState.seed, multiplayerState.totalRounds);
+            copyTextToClipboard(url);
+            showToast("Lien du défi copié dans le presse-papiers !", "info");
+        }
+
+        function copyMultiplayerResult() {
+            const url = buildChallengeShareUrl(multiplayerState.seed, multiplayerState.totalRounds);
+            const totalAttempts = multiplayerState.roundHistory.reduce((acc, r) => acc + r.attemptsCount, 0);
+            const totalTimeStr = formatDurationMs(multiplayerState.totalElapsedMs, true);
+            const summaryText =
+                `🌍 Défi GeoCity (${multiplayerState.totalRounds} tours)\n` +
+                `⏱️ Temps total : ${totalTimeStr}\n` +
+                `🎯 Total essais : ${totalAttempts}\n` +
+                `⚙️ Config : ${describeCurrentConfig()}\n` +
+                `🔗 Essaie de battre mon temps : ${url}`;
+            copyTextToClipboard(summaryText);
+            const btn = document.getElementById('victory-share-score-btn');
+            const span = btn.querySelector('span');
+            if (span) {
+                span.innerText = 'Résultat & lien copiés !';
+                setTimeout(() => { span.innerText = 'Copier mon temps & lien du défi'; }, 2200);
+            }
+        }
+
+        function updateMultiplayerBanner() {
+            const banner = document.getElementById('challenge-active-banner');
+            const statsGrid = document.getElementById('stats-grid');
+            const roundCard = document.getElementById('stat-round-card');
+            const timerLabel = document.getElementById('stat-timer-label');
+
+            if (multiplayerState.active) {
+                banner.classList.remove('hidden');
+                document.getElementById('challenge-banner-info').innerText =
+                    `Tour ${multiplayerState.currentRound} / ${multiplayerState.totalRounds} • Graine : ${multiplayerState.seed}`;
+                statsGrid.classList.remove('grid-cols-3');
+                statsGrid.classList.add('grid-cols-2', 'sm:grid-cols-4');
+                roundCard.classList.remove('hidden');
+                document.getElementById('stat-round').innerText = `${multiplayerState.currentRound}/${multiplayerState.totalRounds}`;
+                timerLabel.innerText = 'Chrono Global';
+            } else {
+                banner.classList.add('hidden');
+                statsGrid.classList.remove('grid-cols-2', 'sm:grid-cols-4');
+                statsGrid.classList.add('grid-cols-3');
+                roundCard.classList.add('hidden');
+                timerLabel.innerText = 'Temps';
+            }
+        }
 
         // Toggle Mobile Settings Drawer
         function toggleMobileSettings() {
@@ -829,6 +1293,10 @@
 
         // Handle Geo Scope Change (World / Continent / Country)
         function onGeoScopeChange(val) {
+            if (multiplayerState.active) {
+                multiplayerState.active = false;
+                updateMultiplayerBanner();
+            }
             const regionWrapper = document.getElementById('region-select-wrapper');
             const regionSelect = document.getElementById('region-select');
             selectedRegionCode = 'ALL';
@@ -857,6 +1325,10 @@
 
         // Handle Region Change inside a Selected Country
         function onRegionChange(val) {
+            if (multiplayerState.active) {
+                multiplayerState.active = false;
+                updateMultiplayerBanner();
+            }
             selectedRegionCode = val;
             rebuildActiveGamePool();
             initGame();
@@ -864,6 +1336,10 @@
 
         // Handle Max Cities Per Country Change
         function onMaxPerCountryChange(val) {
+            if (multiplayerState.active) {
+                multiplayerState.active = false;
+                updateMultiplayerBanner();
+            }
             maxCitiesPerCountry = parseInt(val, 10) || 0;
             rebuildActiveGamePool();
             initGame();
@@ -972,6 +1448,10 @@
 
         // Handler for Top N Pool Size dropdown
         function onPoolSizeChange(val) {
+            if (multiplayerState.active) {
+                multiplayerState.active = false;
+                updateMultiplayerBanner();
+            }
             poolSizeLimit = parseInt(val, 10) || 1000;
             rebuildActiveGamePool();
             initGame();
@@ -983,6 +1463,10 @@
             if (geoScopeType === 'COUNTRY') {
                 showToast("Le filtre Capitales uniquement n'est pas disponible lorsqu'un seul pays est sélectionné.", "warning");
                 return;
+            }
+            if (multiplayerState.active) {
+                multiplayerState.active = false;
+                updateMultiplayerBanner();
             }
             capitalsOnlyMode = !capitalsOnlyMode;
             const btn = document.getElementById('btn-capitals-only');
@@ -1026,7 +1510,7 @@
             populateCountriesDropdown();
             rebuildActiveGamePool();
             hideLoadingOverlay();
-            initGame();
+            checkUrlChallengeOrInit();
             if (reasonMsg) showToast(reasonMsg, "warning");
         }
 
@@ -1194,10 +1678,23 @@
                 populateCountriesDropdown();
                 rebuildActiveGamePool();
                 hideLoadingOverlay();
-                initGame();
+                checkUrlChallengeOrInit();
             } else {
                 activateFallbackDatabase("Réseau lent ou indisponible : base intégrée chargée.");
             }
+        }
+
+        // Check if page was opened with a shared multiplayer challenge link (#challenge=...)
+        function checkUrlChallengeOrInit() {
+            const hash = window.location.hash || '';
+            if (hash.includes('challenge=')) {
+                const parsed = parseChallengeFromText(hash);
+                if (parsed) {
+                    applyChallengeConfigAndLaunch(parsed);
+                    return;
+                }
+            }
+            initGame();
         }
 
         function hideLoadingOverlay() {
@@ -1227,6 +1724,43 @@
 
             updateUI();
             drawRadar();
+        }
+
+        // Toggle 2D Radar vs 3D Sphere Projection
+        function setProjectionMode(mode) {
+            projectionMode = mode;
+            const btn2d = document.getElementById('btn-proj-2d');
+            const btn3d = document.getElementById('btn-proj-3d');
+            const canvas2d = document.getElementById('radarCanvas');
+            const centerDot2d = document.getElementById('radar-center-indicator');
+            const globe3d = document.getElementById('globe3d-container');
+            const scaleGroup = document.getElementById('scale-toggle-group');
+            const scaleBadge = document.getElementById('radar-scale-badge');
+            const targetLabel = document.getElementById('radar-target-label');
+
+            document.getElementById('radar-tooltip').classList.add('hidden');
+
+            if (mode === '2d') {
+                btn2d.className = 'px-2 py-0.5 rounded-md bg-cyan-500 text-slate-950 font-semibold transition';
+                btn3d.className = 'px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition';
+                canvas2d.classList.remove('hidden');
+                centerDot2d.classList.remove('hidden');
+                globe3d.classList.add('hidden');
+                scaleGroup.classList.remove('hidden');
+                scaleBadge.innerHTML = 'Échelle max: <span id="radar-max-dist" class="text-slate-200 font-semibold">--- km</span>';
+                targetLabel.innerHTML = 'Cible : <strong class="text-cyan-400">Centre (0 km)</strong>';
+                resizeAndDrawRadar();
+            } else {
+                btn3d.className = 'px-2 py-0.5 rounded-md bg-cyan-500 text-slate-950 font-semibold transition';
+                btn2d.className = 'px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition';
+                canvas2d.classList.add('hidden');
+                centerDot2d.classList.add('hidden');
+                globe3d.classList.remove('hidden');
+                scaleGroup.classList.add('hidden');
+                scaleBadge.innerHTML = 'Rayon : <span class="text-cyan-300 font-semibold">6 371 km</span>';
+                targetLabel.innerHTML = 'Cible : <strong class="text-cyan-400">Pôle Cyan (3D)</strong>';
+                initOrUpdateGlobe3D(true);
+            }
         }
 
         // Toggle Linear vs Logarithmic Radar Distance Scale
@@ -1311,14 +1845,26 @@
             clearSearchInput();
             hideToast();
 
-            // Pick a secret city randomly from the active pool (filtered by scope, country cap & sorted by population)
-            const secretIdx = Math.floor(Math.random() * ACTIVE_GAME_POOL.length);
+            // Use deterministic seeded RNG in Multiplayer Race mode, or Math.random() in Solo
+            const randFn = (multiplayerState.active && multiplayerState.rng) ? multiplayerState.rng : Math.random;
+
+            // Pick a secret city from the active pool (avoid repeating cities already played in the same race)
+            const alreadyUsedNames = new Set(
+                multiplayerState.active ? multiplayerState.roundHistory.map(r => `${r.city.name}|${r.city.countryCode}`) : []
+            );
+
+            let secretIdx = Math.floor(randFn() * ACTIVE_GAME_POOL.length);
+            let guard = 0;
+            while (alreadyUsedNames.has(`${ACTIVE_GAME_POOL[secretIdx].name}|${ACTIVE_GAME_POOL[secretIdx].countryCode}`) && guard < 50) {
+                secretIdx = Math.floor(randFn() * ACTIVE_GAME_POOL.length);
+                guard++;
+            }
             secretCity = ACTIVE_GAME_POOL[secretIdx];
 
-            // Pick 3 distinct random clue cities from the active pool
+            // Pick 3 distinct clue cities from the active pool
             const usedIndices = new Set([secretIdx]);
             while (startingClues.length < 3 && usedIndices.size < ACTIVE_GAME_POOL.length) {
-                const idx = Math.floor(Math.random() * ACTIVE_GAME_POOL.length);
+                const idx = Math.floor(randFn() * ACTIVE_GAME_POOL.length);
                 if (!usedIndices.has(idx)) {
                     usedIndices.add(idx);
                     const city = ACTIVE_GAME_POOL[idx];
@@ -1335,29 +1881,47 @@
                 }
             }
 
-            // Start Timer
+            // Start or Resume Timer
             if (timerInterval) clearInterval(timerInterval);
             startTime = Date.now();
-            timerInterval = setInterval(updateTimer, 1000);
+            if (multiplayerState.active) {
+                multiplayerState.roundStartTime = startTime;
+                updateMultiplayerBanner();
+            }
+            timerInterval = setInterval(updateTimer, 100);
             updateTimer();
 
             // Update UI & Render Radar
             updateUI();
             resizeAndDrawRadar();
+            if (projectionMode === '3d') {
+                initOrUpdateGlobe3D(true);
+            }
         }
 
         function restartGame() {
+            if (multiplayerState.active) {
+                launchMultiplayerRace(multiplayerState.seed, multiplayerState.totalRounds);
+                showToast(`Course redémarrée au Tour 1 / ${multiplayerState.totalRounds} (Graine : ${multiplayerState.seed}).`, "info");
+                return;
+            }
             initGame();
             showToast("Nouvelle ville secrète générée ! Bonne chance.", "info");
         }
 
-        // Timer formatting
+        // Update Solo Timer or Cumulative Multiplayer Race Timer
         function updateTimer() {
             if (isGameOver) return;
-            elapsedTimeSeconds = Math.floor((Date.now() - startTime) / 1000);
-            const mins = String(Math.floor(elapsedTimeSeconds / 60)).padStart(2, '0');
-            const secs = String(elapsedTimeSeconds % 60).padStart(2, '0');
-            document.getElementById('stat-timer').innerText = `${mins}:${secs}`;
+            if (multiplayerState.active) {
+                const currentRoundMs = Date.now() - multiplayerState.roundStartTime;
+                const totalMs = multiplayerState.totalElapsedMs + currentRoundMs;
+                document.getElementById('stat-timer').innerText = formatDurationMs(totalMs, true);
+            } else {
+                elapsedTimeSeconds = Math.floor((Date.now() - startTime) / 1000);
+                const mins = String(Math.floor(elapsedTimeSeconds / 60)).padStart(2, '0');
+                const secs = String(elapsedTimeSeconds % 60).padStart(2, '0');
+                document.getElementById('stat-timer').innerText = `${mins}:${secs}`;
+            }
         }
 
         // Handle Guess Submission (accepts either a city object directly or a string query)
@@ -1422,6 +1986,9 @@
                 hideToast();
                 updateUI();
                 drawRadar();
+                if (projectionMode === '3d') {
+                    initOrUpdateGlobe3D(false);
+                }
             }
         }
 
@@ -1437,23 +2004,111 @@
             clearInterval(timerInterval);
             updateUI();
             drawRadar();
+            if (projectionMode === '3d') {
+                initOrUpdateGlobe3D(false);
+            }
 
-            // Populate Victory Modal
-            document.getElementById('victory-city-name').innerText = secretCity.name;
-            document.getElementById('victory-country-name').innerText = secretCity.country;
             const latDir = secretCity.lat >= 0 ? 'N' : 'S';
             const lonDir = secretCity.lon >= 0 ? 'E' : 'O';
+            document.getElementById('victory-city-name').innerText = secretCity.name;
+            document.getElementById('victory-country-name').innerText = secretCity.country;
             document.getElementById('victory-coords').innerText =
                 `${Math.abs(secretCity.lat).toFixed(4)}° ${latDir}, ${Math.abs(secretCity.lon).toFixed(4)}° ${lonDir}`;
             document.getElementById('victory-pop').innerText =
                 `Population : ${formatPopulation(secretCity.pop)}`;
 
-            document.getElementById('victory-attempts').innerText = attempts.length;
-            document.getElementById('victory-time').innerText = document.getElementById('stat-timer').innerText;
+            const titleEl = document.getElementById('victory-modal-title');
+            const subEl = document.getElementById('victory-modal-subtitle');
+            const summaryBox = document.getElementById('multiplayer-summary-box');
+            const shareScoreBtn = document.getElementById('victory-share-score-btn');
+            const primaryBtn = document.getElementById('victory-primary-btn');
+
+            if (multiplayerState.active) {
+                const roundDurationMs = Date.now() - multiplayerState.roundStartTime;
+                multiplayerState.totalElapsedMs += roundDurationMs;
+                multiplayerState.roundHistory.push({
+                    round: multiplayerState.currentRound,
+                    city: secretCity,
+                    attemptsCount: attempts.length,
+                    durationMs: roundDurationMs
+                });
+
+                const isFinalRound = multiplayerState.currentRound >= multiplayerState.totalRounds;
+                document.getElementById('stat-timer').innerText = formatDurationMs(multiplayerState.totalElapsedMs, true);
+
+                if (!isFinalRound) {
+                    // Intermediate round cleared -> show brief transition and advance to next round
+                    titleEl.innerText = `Tour ${multiplayerState.currentRound} / ${multiplayerState.totalRounds} Validé !`;
+                    subEl.innerText = `Temps du tour : ${formatDurationMs(roundDurationMs, true)} • Chronomètre en pause`;
+                    summaryBox.classList.add('hidden');
+                    shareScoreBtn.classList.add('hidden');
+
+                    document.getElementById('victory-attempts-label').innerText = 'Essais sur ce tour';
+                    document.getElementById('victory-attempts').innerText = attempts.length;
+                    document.getElementById('victory-time-label').innerText = 'Temps cumulé';
+                    document.getElementById('victory-time').innerText = formatDurationMs(multiplayerState.totalElapsedMs, true);
+
+                    primaryBtn.innerText = `Lancer le Tour ${multiplayerState.currentRound + 1} / ${multiplayerState.totalRounds} →`;
+                } else {
+                    // Final round cleared -> show complete race podium summary
+                    const totalAttempts = multiplayerState.roundHistory.reduce((s, r) => s + r.attemptsCount, 0);
+                    titleEl.innerText = `Course Terminée !`;
+                    subEl.innerText = `Vous avez complété les ${multiplayerState.totalRounds} tours du défi.`;
+
+                    document.getElementById('victory-attempts-label').innerText = 'Total essais';
+                    document.getElementById('victory-attempts').innerText = totalAttempts;
+                    document.getElementById('victory-time-label').innerText = 'Temps Final';
+                    document.getElementById('victory-time').innerText = formatDurationMs(multiplayerState.totalElapsedMs, true);
+
+                    // Render round-by-round breakdown
+                    document.getElementById('multiplayer-seed-badge').innerText = `Graine : ${multiplayerState.seed}`;
+                    const roundsListEl = document.getElementById('multiplayer-rounds-list');
+                    roundsListEl.innerHTML = multiplayerState.roundHistory.map(r => `
+                        <div class="flex items-center justify-between bg-slate-900/90 px-3 py-1.5 rounded-lg border border-slate-800">
+                            <span class="text-slate-200 font-medium truncate">
+                                <span class="text-indigo-400 font-mono mr-1">#${r.round}</span> ${r.city.name} <span class="text-slate-500">(${r.city.country})</span>
+                            </span>
+                            <span class="font-mono text-cyan-300 shrink-0 ml-2">
+                                ${r.attemptsCount} essai${r.attemptsCount > 1 ? 's' : ''} &bull; ${formatDurationMs(r.durationMs, true)}
+                            </span>
+                        </div>
+                    `).join('');
+
+                    summaryBox.classList.remove('hidden');
+                    shareScoreBtn.classList.remove('hidden');
+                    primaryBtn.innerText = 'Rejouer cette même course';
+                }
+            } else {
+                // Standard Solo Victory
+                titleEl.innerText = 'Cible Localisée !';
+                subEl.innerText = 'Vous avez identifié la ville secrète avec précision.';
+                summaryBox.classList.add('hidden');
+                shareScoreBtn.classList.add('hidden');
+
+                document.getElementById('victory-attempts-label').innerText = "Nombre d'essais";
+                document.getElementById('victory-attempts').innerText = attempts.length;
+                document.getElementById('victory-time-label').innerText = 'Temps écoulé';
+                document.getElementById('victory-time').innerText = document.getElementById('stat-timer').innerText;
+                primaryBtn.innerText = 'Rejouer une nouvelle cible';
+            }
 
             setTimeout(() => {
                 document.getElementById('victory-modal').classList.remove('hidden');
-            }, 600);
+            }, 450);
+        }
+
+        function handleVictoryPrimaryAction() {
+            if (multiplayerState.active) {
+                if (multiplayerState.currentRound < multiplayerState.totalRounds) {
+                    multiplayerState.currentRound++;
+                    initGame();
+                    return;
+                } else {
+                    launchMultiplayerRace(multiplayerState.seed, multiplayerState.totalRounds);
+                    return;
+                }
+            }
+            restartGame();
         }
 
         // Update Sidebar Stats and Vector List
@@ -1924,10 +2579,341 @@
         }
 
         // Responsive Resize Listener & Window Load
-        window.addEventListener('resize', resizeAndDrawRadar);
+        window.addEventListener('resize', () => {
+            resizeAndDrawRadar();
+            if (projectionMode === '3d') {
+                resizeGlobe3D();
+            }
+        });
         window.onload = function() {
             loadWorldCitiesDatabase();
         };
+
+        // ==========================================
+        // 3D SPHERE PROJECTION ENGINE (THREE.JS)
+        // ==========================================
+        let globeScene = null;
+        let globeCamera = null;
+        let globeRenderer = null;
+        let globePivotGroup = null;
+        let globeVectorsGroup = null;
+        let globeAnimationId = null;
+        let globe3dLabels = [];
+        let globeRotX = 0.35; // Pitch so the North Pole (Secret City) faces slightly toward viewer
+        let globeRotY = 0.0;  // Yaw rotation around the Secret City axis
+        let isDraggingGlobe = false;
+        let prevPointerX = 0;
+        let prevPointerY = 0;
+
+        // Convert geodesic distance (km) and forward azimuth bearing (deg) into a 3D unit vector
+        // where the Secret City sits at the North Pole (0, +R, 0) and North (+Z) points down-screen
+        function geodesicToSphereVec3(distanceKm, bearingDeg, radius) {
+            const EARTH_R = 6371;
+            const angularDist = Math.min(Math.PI, Math.max(0, distanceKm / EARTH_R));
+            const azRad = toRad(bearingDeg);
+            const sinA = Math.sin(angularDist);
+            const cosA = Math.cos(angularDist);
+
+            // North = -Z, East = +X, South = +Z, West = -X, Origin (Secret City) = +Y
+            const x = radius * sinA * Math.sin(azRad);
+            const y = radius * cosA;
+            const z = -radius * sinA * Math.cos(azRad);
+            return new THREE.Vector3(x, y, z);
+        }
+
+        function initThreeGlobeCore() {
+            if (globeRenderer) return;
+            const container = document.getElementById('globe3d-container');
+            const rect = container.getBoundingClientRect();
+            const size = Math.max(260, rect.width || 400);
+
+            globeScene = new THREE.Scene();
+            globeCamera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+            globeCamera.position.set(0, 0, 3.15);
+
+            globeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            globeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            globeRenderer.setSize(size, size);
+            container.insertBefore(globeRenderer.domElement, container.firstChild);
+
+            // Ambient & directional lighting for depth perception
+            const ambientLight = new THREE.AmbientLight(0x94a3b8, 1.35);
+            globeScene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0x38bdf8, 1.2);
+            dirLight.position.set(3, 5, 4);
+            globeScene.add(dirLight);
+
+            globePivotGroup = new THREE.Group();
+            globeScene.add(globePivotGroup);
+
+            const SPHERE_R = 1.0;
+
+            // Translucent dark ocean sphere
+            const sphereGeo = new THREE.SphereGeometry(SPHERE_R * 0.992, 48, 36);
+            const sphereMat = new THREE.MeshPhongMaterial({
+                color: 0x091326,
+                emissive: 0x040b18,
+                specular: 0x1e3a5f,
+                shininess: 22,
+                transparent: true,
+                opacity: 0.92
+            });
+            const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
+            globePivotGroup.add(sphereMesh);
+
+            // Concentric geodesic distance rings (2,500 km, 5,000 km, 10,000 km equator, 15,000 km)
+            const ringDistances = [2500, 5000, 10008, 15000];
+            ringDistances.forEach((dKm, idx) => {
+                const ang = dKm / 6371;
+                const rRing = Math.sin(ang) * SPHERE_R * 1.002;
+                const yRing = Math.cos(ang) * SPHERE_R * 1.002;
+                const pts = [];
+                for (let i = 0; i <= 72; i++) {
+                    const theta = (i / 72) * Math.PI * 2;
+                    pts.push(new THREE.Vector3(Math.cos(theta) * rRing, yRing, Math.sin(theta) * rRing));
+                }
+                const ringGeo = new THREE.BufferGeometry().setFromPoints(pts);
+                const isEquator = idx === 2;
+                const ringMat = new THREE.LineBasicMaterial({
+                    color: isEquator ? 0x38bdf8 : 0x1e3a5f,
+                    transparent: true,
+                    opacity: isEquator ? 0.55 : 0.35
+                });
+                globePivotGroup.add(new THREE.Line(ringGeo, ringMat));
+            });
+
+            // Cardinal meridian arcs (N-S and E-W great circles through the Secret City pole)
+            [0, 45, 90, 135].forEach(deg => {
+                const rad = toRad(deg);
+                const pts = [];
+                for (let i = 0; i <= 72; i++) {
+                    const phi = (i / 72) * Math.PI * 2;
+                    const x = Math.sin(phi) * Math.sin(rad) * SPHERE_R * 1.002;
+                    const y = Math.cos(phi) * SPHERE_R * 1.002;
+                    const z = -Math.sin(phi) * Math.cos(rad) * SPHERE_R * 1.002;
+                    pts.push(new THREE.Vector3(x, y, z));
+                }
+                const merGeo = new THREE.BufferGeometry().setFromPoints(pts);
+                const merMat = new THREE.LineBasicMaterial({
+                    color: deg === 0 ? 0x22d3ee : 0x1e293b,
+                    transparent: true,
+                    opacity: deg === 0 ? 0.45 : 0.35
+                });
+                globePivotGroup.add(new THREE.Line(merGeo, merMat));
+            });
+
+            // Secret City Beacon at North Pole (0, +1, 0)
+            const poleGeo = new THREE.SphereGeometry(0.032, 16, 16);
+            const poleMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee });
+            const poleMesh = new THREE.Mesh(poleGeo, poleMat);
+            poleMesh.position.set(0, SPHERE_R, 0);
+            globePivotGroup.add(poleMesh);
+
+            const haloGeo = new THREE.RingGeometry(0.045, 0.068, 32);
+            const haloMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
+            const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+            haloMesh.position.set(0, SPHERE_R * 1.004, 0);
+            haloMesh.rotation.x = -Math.PI / 2;
+            globePivotGroup.add(haloMesh);
+
+            globeVectorsGroup = new THREE.Group();
+            globePivotGroup.add(globeVectorsGroup);
+
+            // Mouse & Touch Drag Controls for rotating the 3D sphere
+            container.addEventListener('mousedown', (e) => {
+                isDraggingGlobe = true;
+                prevPointerX = e.clientX;
+                prevPointerY = e.clientY;
+            });
+            window.addEventListener('mousemove', (e) => {
+                if (!isDraggingGlobe || projectionMode !== '3d') return;
+                const dx = e.clientX - prevPointerX;
+                const dy = e.clientY - prevPointerY;
+                prevPointerX = e.clientX;
+                prevPointerY = e.clientY;
+                globeRotY += dx * 0.008;
+                globeRotX = Math.max(-Math.PI / 2.1, Math.min(Math.PI / 2.1, globeRotX + dy * 0.008));
+            });
+            window.addEventListener('mouseup', () => {
+                isDraggingGlobe = false;
+            });
+
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isDraggingGlobe = true;
+                    prevPointerX = e.touches[0].clientX;
+                    prevPointerY = e.touches[0].clientY;
+                }
+            }, { passive: true });
+            container.addEventListener('touchmove', (e) => {
+                if (!isDraggingGlobe || e.touches.length !== 1) return;
+                const dx = e.touches[0].clientX - prevPointerX;
+                const dy = e.touches[0].clientY - prevPointerY;
+                prevPointerX = e.touches[0].clientX;
+                prevPointerY = e.touches[0].clientY;
+                globeRotY += dx * 0.01;
+                globeRotX = Math.max(-Math.PI / 2.1, Math.min(Math.PI / 2.1, globeRotX + dy * 0.01));
+            }, { passive: true });
+            container.addEventListener('touchend', () => {
+                isDraggingGlobe = false;
+            });
+
+            startGlobe3DLoop();
+        }
+
+        function resizeGlobe3D() {
+            if (!globeRenderer || !globeCamera) return;
+            const container = document.getElementById('globe3d-container');
+            const rect = container.getBoundingClientRect();
+            const size = Math.max(240, rect.width);
+            globeCamera.aspect = 1;
+            globeCamera.updateProjectionMatrix();
+            globeRenderer.setSize(size, size);
+        }
+
+        function initOrUpdateGlobe3D(resetOrientation = false) {
+            if (!secretCity) return;
+            initThreeGlobeCore();
+            resizeGlobe3D();
+
+            if (resetOrientation) {
+                globeRotX = 0.42;
+                globeRotY = 0.0;
+            }
+
+            // Clear previous 3D arcs and markers
+            while (globeVectorsGroup.children.length > 0) {
+                const obj = globeVectorsGroup.children[0];
+                if (obj.geometry) obj.geometry.dispose();
+                if (obj.material) obj.material.dispose();
+                globeVectorsGroup.remove(obj);
+            }
+
+            const labelsLayer = document.getElementById('globe3d-labels-layer');
+            labelsLayer.innerHTML = '';
+            globe3dLabels = [];
+
+            const SPHERE_R = 1.0;
+
+            // Add static Cardinal Reference Markers (N, E, S, O) along the equator of the Secret City
+            [
+                { text: 'N', bearing: 0 },
+                { text: 'E', bearing: 90 },
+                { text: 'S', bearing: 180 },
+                { text: 'O', bearing: 270 }
+            ].forEach(c => {
+                const pos = geodesicToSphereVec3(10008, c.bearing, SPHERE_R * 1.02);
+                const el = document.createElement('div');
+                el.className = 'absolute -translate-x-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-cyan-400/80 px-1 rounded bg-slate-950/70';
+                el.innerText = c.text;
+                labelsLayer.appendChild(el);
+                globe3dLabels.push({ el, pos3d: pos, isCardinal: true });
+            });
+
+            // Add Center Secret City Label
+            const secretEl = document.createElement('div');
+            secretEl.className = 'absolute -translate-x-1/2 -translate-y-full -mt-2 text-[10px] font-mono font-bold text-cyan-300 px-1.5 py-0.5 rounded bg-slate-950/85 border border-cyan-500/40 whitespace-nowrap';
+            secretEl.innerText = isGameOver ? `★ ${secretCity.name}` : 'Cible (0 km)';
+            labelsLayer.appendChild(secretEl);
+            globe3dLabels.push({ el: secretEl, pos3d: new THREE.Vector3(0, SPHERE_R * 1.02, 0), isCardinal: false });
+
+            // Render Great-Circle Geodesic Arcs & Endpoints for Clues and Guesses
+            const allVectors = [...startingClues, ...attempts];
+            const showClueName = (difficultyMode === 'classic' || isGameOver);
+
+            allVectors.forEach(vec => {
+                const endPos = geodesicToSphereVec3(vec.distance, vec.bearing, SPHERE_R * 1.005);
+
+                let colorHex = 0x818cf8; // Indigo for guesses
+                let pillClass = 'text-slate-100 border-indigo-400/40';
+                if (vec.isClue) {
+                    colorHex = 0xfbbf24; // Amber for clues
+                    pillClass = 'text-amber-200 border-amber-400/40';
+                } else if (vec.distance < 1000) {
+                    colorHex = 0x34d399; // Emerald for close guesses
+                    pillClass = 'text-emerald-200 border-emerald-400/40';
+                }
+
+                // Great-circle arc points from North Pole (Secret City) to Endpoint
+                const arcSegments = Math.max(12, Math.min(48, Math.ceil(vec.distance / 350)));
+                const arcPoints = [];
+                for (let s = 0; s <= arcSegments; s++) {
+                    const frac = s / arcSegments;
+                    const lift = SPHERE_R * (1.004 + Math.sin(frac * Math.PI) * 0.012);
+                    arcPoints.push(geodesicToSphereVec3(vec.distance * frac, vec.bearing, lift));
+                }
+
+                const arcGeo = new THREE.BufferGeometry().setFromPoints(arcPoints);
+                const arcMat = new THREE.LineBasicMaterial({ color: colorHex });
+                globeVectorsGroup.add(new THREE.Line(arcGeo, arcMat));
+
+                // Endpoint Sphere Marker
+                const nodeGeo = new THREE.SphereGeometry(vec.isClue ? 0.024 : 0.028, 14, 14);
+                const nodeMat = new THREE.MeshBasicMaterial({ color: colorHex });
+                const nodeMesh = new THREE.Mesh(nodeGeo, nodeMat);
+                nodeMesh.position.copy(endPos);
+                globeVectorsGroup.add(nodeMesh);
+
+                // HTML Floating Label projected each frame
+                const labelText = vec.isClue
+                    ? (showClueName ? `${vec.city.name} (${vec.distance.toLocaleString('fr-FR')} km)` : `Indice #${vec.clueIndex}`)
+                    : `${vec.city.name} (${vec.distance.toLocaleString('fr-FR')} km)`;
+
+                const labelEl = document.createElement('div');
+                labelEl.className = `absolute -translate-x-1/2 -translate-y-full -mt-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-950/85 border ${pillClass} whitespace-nowrap shadow`;
+                labelEl.innerText = labelText;
+                labelsLayer.appendChild(labelEl);
+
+                globe3dLabels.push({ el: labelEl, pos3d: endPos.clone().multiplyScalar(1.02), isCardinal: false });
+            });
+        }
+
+        function startGlobe3DLoop() {
+            if (globeAnimationId) cancelAnimationFrame(globeAnimationId);
+            const container = document.getElementById('globe3d-container');
+            const tempVec = new THREE.Vector3();
+            const camDir = new THREE.Vector3();
+
+            function animate() {
+                globeAnimationId = requestAnimationFrame(animate);
+                if (projectionMode !== '3d' || !globeRenderer || !globePivotGroup) return;
+
+                globePivotGroup.rotation.x = globeRotX;
+                globePivotGroup.rotation.y = globeRotY;
+                globePivotGroup.updateMatrixWorld();
+
+                globeRenderer.render(globeScene, globeCamera);
+
+                // Project 3D coordinates onto 2D overlay and fade points on the back hemisphere
+                const size = container.getBoundingClientRect().width;
+                const half = size / 2;
+
+                for (let i = 0; i < globe3dLabels.length; i++) {
+                    const item = globe3dLabels[i];
+                    tempVec.copy(item.pos3d).applyMatrix4(globePivotGroup.matrixWorld);
+
+                    // Check hemisphere visibility relative to camera at (0, 0, +Z)
+                    camDir.copy(globeCamera.position).sub(tempVec).normalize();
+                    const normal = tempVec.clone().normalize();
+                    const facing = normal.dot(camDir);
+
+                    if (facing < -0.08) {
+                        item.el.style.opacity = '0.16';
+                        item.el.style.zIndex = '1';
+                    } else {
+                        item.el.style.opacity = '1';
+                        item.el.style.zIndex = '10';
+                    }
+
+                    tempVec.project(globeCamera);
+                    const screenX = (tempVec.x * half) + half;
+                    const screenY = -(tempVec.y * half) + half;
+                    item.el.style.left = `${screenX}px`;
+                    item.el.style.top = `${screenY}px`;
+                }
+            }
+            animate();
+        }
     </script>
 </body>
 </html>
