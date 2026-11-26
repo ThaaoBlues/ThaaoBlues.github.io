@@ -6,6 +6,7 @@
     <title>GeoCity - Jeu de Géolocalisation & Radar Vectoriel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -140,11 +141,16 @@
 
             <!-- Active Multiplayer Challenge Banner (Shown when playing a shared challenge) -->
             <div id="challenge-active-banner" class="hidden mt-2.5 px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-950/90 via-slate-900/90 to-cyan-950/90 border border-indigo-500/40 flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div class="flex items-center space-x-2 min-w-0">
-                    <span class="px-2 py-0.5 rounded-md bg-indigo-500 text-white font-bold uppercase tracking-wider text-[10px] shrink-0">Course Multi</span>
+                <div class="flex flex-wrap items-center gap-2 min-w-0">
+                    <span class="px-2 py-0.5 rounded-md bg-indigo-500 text-white font-bold uppercase tracking-wider text-[10px] shrink-0">Course P2P</span>
+                    <span id="p2p-banner-status" class="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono text-[10px] shrink-0">● P2P Actif</span>
+                    <span id="p2p-banner-pseudo" class="px-2 py-0.5 rounded-md bg-slate-800/90 text-cyan-300 border border-slate-700 font-semibold text-[11px] shrink-0">👤 Joueur</span>
                     <span id="challenge-banner-info" class="text-slate-200 font-medium truncate">Tour 1 / 5 &bull; Graine #------</span>
                 </div>
                 <div class="flex items-center space-x-2 shrink-0">
+                    <button onclick="openP2PLobbyModal()" class="px-2.5 py-1 rounded-lg bg-indigo-900/70 hover:bg-indigo-800 text-indigo-200 border border-indigo-500/40 font-medium transition flex items-center space-x-1">
+                        <span>Salon P2P</span>
+                    </button>
                     <button onclick="copyActiveChallengeLink()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 font-medium transition flex items-center space-x-1">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                         <span>Copier lien</span>
@@ -257,6 +263,20 @@
 
     <!-- Main Game Container -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- P2P Pressure Alert Banner (Shown when another player finds the secret city) -->
+        <div id="p2p-pressure-banner" class="hidden mb-5 px-4 py-3 rounded-2xl bg-gradient-to-r from-amber-950/90 via-red-950/85 to-amber-950/90 border-2 border-amber-400/70 shadow-xl shadow-amber-500/15 flex items-center justify-between gap-3 animate-pulse">
+            <div class="flex items-center space-x-3 min-w-0">
+                <span class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-lg shrink-0">🔥</span>
+                <div class="min-w-0">
+                    <p id="p2p-pressure-title" class="text-xs font-bold uppercase tracking-wider text-amber-300">Pression maximale !</p>
+                    <p id="p2p-pressure-msg" class="text-sm font-semibold text-white truncate">Un joueur vient de trouver la ville secrète !</p>
+                </div>
+            </div>
+            <button onclick="dismissPressureBanner()" class="text-amber-300/80 hover:text-white p-1 shrink-0" title="Fermer l'alerte">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             <!-- Left Column: Radar Display (7 cols on desktop) -->
@@ -398,6 +418,24 @@
                     </div>
                 </div>
 
+                <!-- Real-Time P2P Scoreboard Panel (Visible in P2P Multiplayer mode) -->
+                <div id="p2p-scoreboard-card" class="hidden bg-slate-900/75 border border-indigo-500/40 rounded-2xl p-4 backdrop-blur-sm shadow-xl">
+                    <div class="flex items-center justify-between gap-2 mb-2.5">
+                        <h2 class="text-sm font-semibold text-indigo-200 flex items-center space-x-2">
+                            <span class="relative flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            <span>Classement en direct</span>
+                        </h2>
+                        <span id="p2p-player-count-badge" class="text-[11px] font-mono bg-indigo-950/80 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-md">1 joueur</span>
+                    </div>
+                    <div id="p2p-last-event" class="hidden mb-2.5 px-2.5 py-1.5 rounded-xl bg-amber-950/50 border border-amber-500/30 text-[11px] text-amber-200 font-medium truncate">
+                    </div>
+                    <div id="p2p-scoreboard-list" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                    </div>
+                </div>
+
                 <!-- Vector History & Clues Panel -->
                 <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm flex-grow flex flex-col max-h-[420px]">
                     <div class="flex items-center justify-between mb-3">
@@ -465,19 +503,28 @@
             <div class="flex items-center space-x-3 mb-4">
                 <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold text-white">Défi Multijoueur (Course Chrono)</h3>
-                    <p class="text-xs text-slate-400">Mêmes villes, mêmes paramètres, même graine aléatoire.</p>
+                    <h3 class="text-lg font-bold text-white">Multijoueur P2P (Course Synchronisée)</h3>
+                    <p class="text-xs text-slate-400">Salon en direct, départ simultané et classement temps réel.</p>
                 </div>
+            </div>
+
+            <!-- Mandatory Pseudonym Field -->
+            <div class="bg-slate-950/90 border border-cyan-500/30 rounded-2xl p-3.5 mb-4">
+                <label for="challenge-pseudo-input" class="block text-xs font-semibold text-cyan-300 mb-1.5">
+                    Votre pseudonyme (requis avant de jouer) :
+                </label>
+                <input type="text" id="challenge-pseudo-input" maxlength="20" autocomplete="nickname" oninput="syncPseudoInputs(this.value)" placeholder="Ex: Magellan, Explorer42..." class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition">
+                <p id="challenge-pseudo-error" class="hidden text-[11px] text-red-400 mt-1.5 font-medium">Veuillez choisir un pseudonyme d'au moins 2 caractères.</p>
             </div>
 
             <!-- Create Challenge Section -->
             <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 space-y-3.5 mb-4">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold uppercase tracking-wider text-indigo-400">1. Créer une course</span>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-indigo-400">1. Créer un salon P2P</span>
                     <button type="button" onclick="regenerateChallengeSeed()" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-[11px] font-mono text-cyan-400 hover:text-cyan-300 flex items-center space-x-1 transition cursor-pointer">
                         <span>↻ Nouvelle graine</span>
                     </button>
@@ -485,7 +532,7 @@
 
                 <!-- Summary of current solo filters that will be locked into the link -->
                 <div class="bg-slate-900/90 border border-slate-800/90 rounded-xl p-3 text-xs space-y-1">
-                    <p class="text-slate-400">Configuration active verrouillée dans le lien :</p>
+                    <p class="text-slate-400">Configuration active verrouillée dans le salon :</p>
                     <p id="challenge-config-summary" class="font-semibold text-cyan-300">Monde &bull; Top 1 000 &bull; Classique</p>
                 </div>
 
@@ -494,6 +541,7 @@
                     <div>
                         <label for="challenge-rounds-select" class="block text-xs text-slate-400 mb-1">Nombre de tours</label>
                         <select id="challenge-rounds-select" onchange="updateGeneratedChallengeUrl()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-white focus:border-indigo-400 focus:outline-none">
+                            <option value="1">1 tour (Duel)</option>
                             <option value="3">3 tours (Sprint)</option>
                             <option value="5" selected>5 tours (Standard)</option>
                             <option value="7">7 tours (Endurance)</option>
@@ -508,7 +556,7 @@
 
                 <!-- Generated Share URL -->
                 <div>
-                    <label class="block text-xs text-slate-400 mb-1">Lien de défi à envoyer aux autres joueurs :</label>
+                    <label class="block text-xs text-slate-400 mb-1">Lien d'invitation P2P à partager :</label>
                     <div class="flex space-x-2">
                         <input type="text" id="challenge-share-url" readonly class="flex-grow bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-[11px] font-mono text-slate-300 select-all focus:outline-none">
                         <button onclick="copyChallengeModalUrl()" id="btn-copy-modal-url" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-semibold rounded-xl border border-slate-600 transition shrink-0">
@@ -518,21 +566,126 @@
                 </div>
 
                 <button onclick="startCreatedChallenge()" class="w-full py-3 bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-400 hover:to-cyan-400 text-slate-950 font-bold text-sm rounded-xl shadow-lg shadow-indigo-500/25 transition transform active:scale-95">
-                    Copier le lien &amp; Lancer ma course !
+                    Ouvrir le salon P2P &amp; Copier le lien
                 </button>
             </div>
 
             <!-- Join Existing Challenge Section -->
             <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 space-y-2.5">
-                <span class="block text-xs font-semibold uppercase tracking-wider text-slate-400">2. Rejoindre via un lien ou un code reçu</span>
+                <span class="block text-xs font-semibold uppercase tracking-wider text-slate-400">2. Rejoindre un salon via lien ou code</span>
                 <div class="flex space-x-2">
-                    <input type="text" id="challenge-join-input" placeholder="Collez ici l'URL ou le code du défi..." class="flex-grow bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none">
+                    <input type="text" id="challenge-join-input" placeholder="Collez l'URL, le code défi, ou le code salon (ex: GC48K2)..." class="flex-grow bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none">
                     <button onclick="joinChallengeFromInput()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-xl transition shrink-0">
                         Rejoindre
                     </button>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- P2P Waiting Lobby Modal -->
+    <div id="p2p-lobby-modal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-indigo-500/50 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+            <div class="flex items-start justify-between gap-3 mb-4">
+                <div class="flex items-center space-x-3 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-300 shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/></svg>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center space-x-2">
+                            <h3 class="text-lg font-bold text-white truncate">Salon P2P</h3>
+                            <span id="lobby-role-badge" class="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold uppercase">Hôte</span>
+                        </div>
+                        <p id="lobby-config-summary" class="text-xs text-slate-400 truncate">Monde &bull; Top 1 000 &bull; 5 tours</p>
+                    </div>
+                </div>
+                <span id="lobby-connection-badge" class="px-2.5 py-1 rounded-full text-[11px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0">
+                    Connexion...
+                </span>
+            </div>
+
+            <!-- Room Code & Invite Link -->
+            <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 mb-4 space-y-2">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs text-slate-400">Code du salon : <strong id="lobby-room-code" class="font-mono text-cyan-300 text-sm tracking-wider">------</strong></span>
+                    <button onclick="copyLobbyRoomCode()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium border border-slate-700 transition">
+                        Copier code
+                    </button>
+                </div>
+                <div class="flex space-x-2">
+                    <input type="text" id="lobby-share-url" readonly class="flex-grow bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-[11px] font-mono text-slate-300 select-all focus:outline-none">
+                    <button onclick="copyLobbyShareUrl()" id="btn-lobby-copy-url" class="px-3 py-1.5 bg-indigo-600/80 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition shrink-0">
+                        Copier lien
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mandatory Pseudonym Selection Before Play Button -->
+            <div class="bg-slate-950/90 border border-cyan-500/35 rounded-2xl p-3.5 mb-4">
+                <label for="lobby-pseudo-input" class="block text-xs font-semibold text-cyan-300 mb-1.5">
+                    Choisissez votre pseudonyme avant de cliquer sur Jouer :
+                </label>
+                <div class="flex space-x-2">
+                    <input type="text" id="lobby-pseudo-input" maxlength="20" autocomplete="nickname" oninput="onLobbyPseudoInput(this.value)" placeholder="Votre pseudonyme (min. 2 caractères)..." class="flex-grow bg-slate-900 border border-slate-700 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 outline-none transition">
+                </div>
+                <p id="lobby-pseudo-hint" class="text-[11px] text-amber-300/90 mt-1.5">
+                    Entrez un pseudonyme d'au moins 2 caractères pour activer le bouton.
+                </p>
+            </div>
+
+            <!-- Live Connected Players List -->
+            <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-3.5 mb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">Joueurs dans le salon</span>
+                    <span id="lobby-players-count" class="text-[11px] font-mono text-cyan-300">0 joueur</span>
+                </div>
+                <div id="lobby-players-list" class="space-y-1.5 max-h-40 overflow-y-auto pr-1 text-xs">
+                </div>
+            </div>
+
+            <!-- Fallback Host Promotion (if guest joined dead link) -->
+            <div id="lobby-host-unavailable-box" class="hidden mb-4 p-3 rounded-xl bg-amber-950/50 border border-amber-500/40 text-xs text-amber-200 space-y-2">
+                <p>L'hôte de ce salon n'est pas joignable pour le moment.</p>
+                <button onclick="promoteSelfToHost()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition">
+                    Devenir l'hôte de ce salon
+                </button>
+            </div>
+
+            <!-- Lobby Action Buttons -->
+            <div class="space-y-2.5">
+                <!-- Host Play Button -->
+                <button id="btn-lobby-host-play" onclick="hostStartP2PRace()" disabled class="hidden w-full py-3.5 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 disabled:opacity-45 disabled:cursor-not-allowed text-slate-950 font-bold text-sm rounded-xl shadow-lg shadow-emerald-500/25 transition transform active:scale-95">
+                    ▶ Jouer (Lancer le chrono pour tous)
+                </button>
+
+                <!-- Guest Ready / Join Play Button -->
+                <button id="btn-lobby-guest-play" onclick="guestConfirmReadyOrPlay()" disabled class="hidden w-full py-3.5 bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 disabled:opacity-45 disabled:cursor-not-allowed text-slate-950 font-bold text-sm rounded-xl shadow-lg shadow-cyan-500/25 transition transform active:scale-95">
+                    ▶ Jouer (Prêt pour le départ)
+                </button>
+
+                <div id="lobby-waiting-msg" class="hidden text-center text-xs text-emerald-300 font-medium py-1">
+                    ✓ Vous êtes prêt ! Le chronomètre démarrera dès que l'hôte lance la partie.
+                </div>
+
+                <div class="flex space-x-2">
+                    <button id="btn-lobby-resume-game" onclick="closeP2PLobbyModal()" class="hidden flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition">
+                        Retour à la partie
+                    </button>
+                    <button onclick="exitChallengeMode()" class="flex-1 py-2.5 bg-red-950/60 hover:bg-red-900/70 text-red-300 text-xs font-semibold rounded-xl border border-red-500/30 transition">
+                        Quitter le salon
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Synchronized P2P Countdown Overlay -->
+    <div id="p2p-countdown-overlay" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-4 text-center">
+        <p class="text-xs font-mono uppercase tracking-widest text-indigo-300 mb-3">Synchronisation P2P &bull; Départ simultané</p>
+        <div id="p2p-countdown-number" class="text-7xl sm:text-8xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-br from-cyan-300 via-indigo-300 to-emerald-300 drop-shadow-[0_0_30px_rgba(34,211,238,0.45)]">
+            3
+        </div>
+        <p id="p2p-countdown-sub" class="text-sm text-slate-300 mt-4 font-medium">Préparez-vous, le chronomètre va démarrer...</p>
     </div>
 
     <!-- Victory / Round Transition Modal -->
@@ -554,6 +707,16 @@
                 <p id="victory-country-name" class="text-sm text-slate-400">France</p>
                 <p id="victory-coords" class="text-xs font-mono text-slate-500 mt-1">48.8566° N, 2.3522° E</p>
                 <p id="victory-pop" class="text-xs font-mono text-cyan-400/90 mt-1">Population : ---</p>
+            </div>
+
+            <!-- Live P2P Leaderboard inside Victory Modal -->
+            <div id="victory-p2p-scoreboard-box" class="hidden bg-slate-950/90 border border-emerald-500/30 rounded-2xl p-3.5 mb-5 text-left">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-emerald-300">Classement P2P en direct</span>
+                    <span id="victory-p2p-live-badge" class="text-[10px] font-mono text-emerald-400">● Temps réel</span>
+                </div>
+                <div id="victory-p2p-scoreboard-list" class="space-y-1.5 max-h-40 overflow-y-auto pr-1 text-xs">
+                </div>
             </div>
 
             <!-- Multiplayer Round-by-Round Breakdown (Visible only at the end of a multiplayer race) -->
@@ -581,6 +744,10 @@
                 <button id="victory-share-score-btn" onclick="copyMultiplayerResult()" class="hidden w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-xl border border-indigo-400/40 transition flex items-center justify-center space-x-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
                     <span>Copier mon temps &amp; lien du défi</span>
+                </button>
+
+                <button id="victory-p2p-lobby-btn" onclick="returnToP2PLobbyForRematch()" class="hidden w-full py-3 bg-slate-800 hover:bg-slate-700 text-cyan-300 font-semibold text-sm rounded-xl border border-cyan-500/40 transition">
+                    Retour au salon P2P (Rejouer ensemble)
                 </button>
 
                 <button id="victory-primary-btn" onclick="handleVictoryPrimaryAction()" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/25 transition transform active:scale-95">
@@ -917,9 +1084,134 @@
             totalRounds: 5,
             currentRound: 1,
             roundStartTime: 0,
+            roundStartPerf: 0,
             totalElapsedMs: 0,
             roundHistory: [], // [{ round, city, attemptsCount, durationMs }]
             rng: null
+        };
+
+        // P2P Multiplayer Room & Sync State
+        const P2P_PEER_CONFIG = {
+            debug: 1,
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' }
+                ]
+            }
+        };
+
+        function getOrCreateClientId() {
+            try {
+                let id = sessionStorage.getItem('geocity_p2p_client_id');
+                if (!id) {
+                    id = 'p_' + Math.random().toString(36).slice(2, 10);
+                    sessionStorage.setItem('geocity_p2p_client_id', id);
+                }
+                return id;
+            } catch (e) {
+                return 'p_' + Math.random().toString(36).slice(2, 10);
+            }
+        }
+
+        function getSavedPseudo() {
+            return '';
+        }
+
+        function savePseudo(val) {
+            return sanitizePseudo(val);
+        }
+
+        function sanitizePseudo(str) {
+            return String(str || '').replace(/\s+/g, ' ').trim().slice(0, 20);
+        }
+
+        function isValidPseudo(str) {
+            return sanitizePseudo(str).length >= 2;
+        }
+
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function generateRoomCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = 'GC';
+            for (let i = 0; i < 4; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        // Subtle synthesized Web Audio alerts for countdown & opponent pressure
+        let sharedAudioCtx = null;
+        function playP2PSound(kind) {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                if (!sharedAudioCtx) sharedAudioCtx = new AudioCtx();
+                if (sharedAudioCtx.state === 'suspended') {
+                    sharedAudioCtx.resume().catch(() => {});
+                }
+                const now = sharedAudioCtx.currentTime;
+                const playTone = (freq, startOffset, duration, type = 'sine', gainVal = 0.08) => {
+                    const osc = sharedAudioCtx.createOscillator();
+                    const gain = sharedAudioCtx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, now + startOffset);
+                    gain.gain.setValueAtTime(gainVal, now + startOffset);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + startOffset + duration);
+                    osc.connect(gain);
+                    gain.connect(sharedAudioCtx.destination);
+                    osc.start(now + startOffset);
+                    osc.stop(now + startOffset + duration);
+                };
+
+                if (kind === 'beep') {
+                    playTone(580, 0, 0.12, 'triangle', 0.07);
+                } else if (kind === 'go') {
+                    playTone(880, 0, 0.24, 'triangle', 0.09);
+                } else if (kind === 'pressure') {
+                    playTone(660, 0, 0.11, 'sawtooth', 0.05);
+                    playTone(880, 0.12, 0.18, 'sawtooth', 0.06);
+                } else if (kind === 'victory') {
+                    playTone(523.25, 0, 0.12, 'sine', 0.07);
+                    playTone(659.25, 0.1, 0.12, 'sine', 0.07);
+                    playTone(783.99, 0.2, 0.24, 'sine', 0.08);
+                }
+            } catch (e) {}
+        }
+
+        let p2pState = {
+            active: false,
+            roomId: '',
+            isHost: false,
+            clientId: getOrCreateClientId(),
+            pseudo: getSavedPseudo(),
+            joined: false,
+            ready: false,
+            gameStarted: false,
+            countdownActive: false,
+            transport: 'peerjs', // 'peerjs' | 'broadcast'
+            statusText: 'Hors ligne',
+            statusTone: 'amber', // 'emerald' | 'amber' | 'red'
+            peer: null,
+            hostConn: null,
+            guestConns: new Map(), // peerId -> { conn, clientId }
+            broadcastChannel: null,
+            signalingTimeout: null,
+            players: [],
+            roundsData: [],
+            lastEventText: '',
+            pressureTimeout: null,
+            scoreboardTickInterval: null,
+            countdownTimer: null
         };
 
         // Deterministic String Hash (FNV-1a) + Mulberry32 PRNG for shared multiplayer seeds
@@ -979,12 +1271,8 @@
             document.body.removeChild(tempInput);
         }
 
-        // Build shareable URL encoding all game settings + seed + rounds
-        function buildChallengeShareUrl(seedStr, roundsCount) {
-            const payload = {
-                v: 1,
-                s: String(seedStr || 'GEO-2026').trim(),
-                r: parseInt(roundsCount, 10) || 5,
+        function getCurrentConfigObject() {
+            return {
                 gt: geoScopeType,
                 gv: geoScopeValue,
                 rg: selectedRegionCode,
@@ -992,6 +1280,17 @@
                 mc: maxCitiesPerCountry,
                 cp: capitalsOnlyMode ? 1 : 0,
                 df: difficultyMode
+            };
+        }
+
+        // Build shareable URL encoding all game settings + seed + rounds + optional P2P roomId
+        function buildChallengeShareUrl(seedStr, roundsCount, roomIdOverride = '') {
+            const payload = {
+                v: 2,
+                s: String(seedStr || 'GEO-2026').trim(),
+                r: parseInt(roundsCount, 10) || 5,
+                rm: String(roomIdOverride || p2pState.roomId || '').trim(),
+                ...getCurrentConfigObject()
             };
             const jsonStr = JSON.stringify(payload);
             const encoded = btoa(encodeURIComponent(jsonStr));
@@ -1035,13 +1334,40 @@
             return `${scopeLabel} · ${poolLabel}${capLabel} · ${diffLabel}`;
         }
 
+        function syncPseudoInputs(rawVal) {
+            const clean = sanitizePseudo(rawVal);
+            p2pState.pseudo = clean;
+            const cInput = document.getElementById('challenge-pseudo-input');
+            const lInput = document.getElementById('lobby-pseudo-input');
+            if (cInput && cInput.value !== rawVal) cInput.value = rawVal;
+            if (lInput && lInput.value !== rawVal) lInput.value = rawVal;
+            if (isValidPseudo(clean)) {
+                savePseudo(clean);
+                const errEl = document.getElementById('challenge-pseudo-error');
+                if (errEl) errEl.classList.add('hidden');
+            }
+            updateLobbyActionButtonsState();
+        }
+
+        let pendingModalRoomId = '';
+
         function openChallengeModal() {
+            if (p2pState.active) {
+                openP2PLobbyModal();
+                return;
+            }
+            pendingModalRoomId = generateRoomCode();
             const seedInput = document.getElementById('challenge-seed-input');
             seedInput.removeAttribute('readonly');
             seedInput.removeAttribute('disabled');
             if (!seedInput.value.trim()) {
                 seedInput.value = generateRandomSeedCode();
             }
+            const pseudoInput = document.getElementById('challenge-pseudo-input');
+            if (pseudoInput) {
+                pseudoInput.value = p2pState.pseudo || getSavedPseudo();
+            }
+            document.getElementById('challenge-pseudo-error').classList.add('hidden');
             document.getElementById('challenge-config-summary').innerText = describeCurrentConfig();
             updateGeneratedChallengeUrl();
             document.getElementById('challenge-modal').classList.remove('hidden');
@@ -1060,7 +1386,9 @@
         function updateGeneratedChallengeUrl() {
             const seedVal = document.getElementById('challenge-seed-input').value.trim() || 'GEO-2026';
             const roundsVal = parseInt(document.getElementById('challenge-rounds-select').value, 10) || 5;
-            const url = buildChallengeShareUrl(seedVal, roundsVal);
+            const roomCode = p2pState.roomId || pendingModalRoomId || generateRoomCode();
+            pendingModalRoomId = roomCode;
+            const url = buildChallengeShareUrl(seedVal, roundsVal, roomCode);
             document.getElementById('challenge-share-url').value = url;
         }
 
@@ -1074,31 +1402,61 @@
         }
 
         function startCreatedChallenge() {
-            updateGeneratedChallengeUrl();
-            const url = document.getElementById('challenge-share-url').value;
+            const pseudoInput = document.getElementById('challenge-pseudo-input');
+            const pseudo = sanitizePseudo(pseudoInput ? pseudoInput.value : p2pState.pseudo);
+            if (!isValidPseudo(pseudo)) {
+                const errEl = document.getElementById('challenge-pseudo-error');
+                if (errEl) errEl.classList.remove('hidden');
+                if (pseudoInput) pseudoInput.focus();
+                return;
+            }
+            savePseudo(pseudo);
+            p2pState.pseudo = pseudo;
+
             const seedVal = document.getElementById('challenge-seed-input').value.trim() || 'GEO-2026';
             const roundsVal = parseInt(document.getElementById('challenge-rounds-select').value, 10) || 5;
+            const roomId = pendingModalRoomId || generateRoomCode();
+            pendingModalRoomId = '';
 
+            const url = buildChallengeShareUrl(seedVal, roundsVal, roomId);
             copyTextToClipboard(url);
             try { window.history.replaceState(null, '', `#challenge=${url.split('#challenge=')[1]}`); } catch (e) {}
+
             closeChallengeModal();
-            launchMultiplayerRace(seedVal, roundsVal);
-            showToast(`Lien copié ! Course en ${roundsVal} tours lancée (Graine : ${seedVal}).`, "info");
+            openP2PRoomAsHost({ roomId, seed: seedVal, totalRounds: roundsVal, pseudo });
+            showToast(`Salon P2P ${roomId} créé et lien copié ! En attente des joueurs...`, "info");
         }
 
         function joinChallengeFromInput() {
             const raw = document.getElementById('challenge-join-input').value.trim();
-            const parsed = parseChallengeFromText(raw);
-            if (!parsed) {
-                showToast("Lien ou code de défi invalide.", "error");
+            if (!raw) {
+                showToast("Veuillez coller un lien d'invitation ou un code salon.", "error");
                 return;
             }
-            closeChallengeModal();
-            applyChallengeConfigAndLaunch(parsed);
+
+            const pseudoInput = document.getElementById('challenge-pseudo-input');
+            const typedPseudo = pseudoInput ? sanitizePseudo(pseudoInput.value) : '';
+
+            const parsed = parseChallengeFromText(raw);
+            if (parsed) {
+                closeChallengeModal();
+                applyChallengeConfigAndLaunch(parsed, typedPseudo);
+                return;
+            }
+
+            // Support short room codes (e.g. GC48K2)
+            const cleanedCode = raw.replace(/^geocity-room-/i, '').trim().toUpperCase();
+            if (/^[A-Z0-9]{4,12}$/.test(cleanedCode)) {
+                closeChallengeModal();
+                openP2PRoomAsGuest({ roomId: cleanedCode, cfg: null, initialPseudo: typedPseudo });
+                return;
+            }
+
+            showToast("Lien ou code de salon invalide.", "error");
         }
 
-        function applyChallengeConfigAndLaunch(cfg) {
-            // Sync UI & State with shared challenge settings
+        function applyChallengeConfigObject(cfg) {
+            if (!cfg) return;
             geoScopeType = cfg.gt || 'WORLD';
             geoScopeValue = cfg.gv || 'WORLD';
             selectedRegionCode = cfg.rg || 'ALL';
@@ -1107,7 +1465,6 @@
             capitalsOnlyMode = Boolean(cfg.cp);
             difficultyMode = cfg.df === 'hardcore' ? 'hardcore' : 'classic';
 
-            // Update Header Selectors to reflect locked challenge settings
             const geoSelect = document.getElementById('geo-scope-select');
             if (geoScopeType === 'WORLD') {
                 geoSelect.value = 'WORLD';
@@ -1138,52 +1495,1363 @@
                 starCap.className = 'text-slate-500';
             }
 
-            setDifficultyMode(difficultyMode);
+            setDifficultyMode(difficultyMode, true);
             rebuildActiveGamePool();
-            launchMultiplayerRace(cfg.s, parseInt(cfg.r, 10) || 5);
-            showToast(`Défi rejoint ! Course de ${cfg.r} tours (Graine : ${cfg.s}).`, "info");
         }
 
-        function launchMultiplayerRace(seedStr, totalRounds) {
+        function applyChallengeConfigAndLaunch(cfg, initialPseudo = '') {
+            applyChallengeConfigObject(cfg);
+            const fallbackRm = 'LEG' + hashSeedString(`${cfg.s}|${cfg.r}`).toString(36).toUpperCase().slice(0, 5);
+            const roomId = String(cfg.rm || fallbackRm).trim().toUpperCase();
+            openP2PRoomAsGuest({ roomId, cfg, initialPseudo });
+        }
+
+        // ==========================================
+        // P2P MULTIPLAYER LOBBY & SYNC ENGINE
+        // ==========================================
+        function cleanupP2PConnections() {
+            if (p2pState.signalingTimeout) {
+                clearTimeout(p2pState.signalingTimeout);
+                p2pState.signalingTimeout = null;
+            }
+            if (p2pState.scoreboardTickInterval) {
+                clearInterval(p2pState.scoreboardTickInterval);
+                p2pState.scoreboardTickInterval = null;
+            }
+            if (p2pState.countdownTimer) {
+                clearInterval(p2pState.countdownTimer);
+                p2pState.countdownTimer = null;
+            }
+            if (p2pState.pressureTimeout) {
+                clearTimeout(p2pState.pressureTimeout);
+                p2pState.pressureTimeout = null;
+            }
+            if (p2pState.hostConn) {
+                try { p2pState.hostConn.close(); } catch (e) {}
+                p2pState.hostConn = null;
+            }
+            p2pState.guestConns.forEach(entry => {
+                try { entry.conn.close(); } catch (e) {}
+            });
+            p2pState.guestConns.clear();
+            if (p2pState.peer) {
+                try { p2pState.peer.destroy(); } catch (e) {}
+                p2pState.peer = null;
+            }
+            if (p2pState.broadcastChannel) {
+                try { p2pState.broadcastChannel.close(); } catch (e) {}
+                p2pState.broadcastChannel = null;
+            }
+        }
+
+        function resetToStandbyBoard() {
+            isGameOver = false;
+            clearInterval(timerInterval);
+            secretCity = null;
+            startingClues = [];
+            attempts = [];
+            document.getElementById('stat-timer').innerText = '00:00.0';
+            updateUI();
+            resizeAndDrawRadar();
+            if (projectionMode === '3d') {
+                initOrUpdateGlobe3D(true);
+            }
+        }
+
+        function createPlayerRecord({ clientId, pseudo, isHost = false, joined = true, ready = false }) {
+            return {
+                id: clientId,
+                pseudo: sanitizePseudo(pseudo) || (isHost ? 'Hôte' : 'Joueur'),
+                isHost: Boolean(isHost),
+                online: true,
+                joined: Boolean(joined),
+                ready: Boolean(ready),
+                inGame: false,
+                currentRound: 1,
+                roundsCompleted: 0,
+                attemptsInRound: 0,
+                totalAttempts: 0,
+                bestDistKm: null,
+                completedTimeMs: 0,
+                inRound: false,
+                roundElapsedMs: 0,
+                lastSyncAt: performance.now(),
+                finished: false,
+                roundHistory: []
+            };
+        }
+
+        function openP2PRoomAsHost({ roomId, seed, totalRounds, pseudo }) {
+            cleanupP2PConnections();
+
             multiplayerState = {
                 active: true,
-                seed: String(seedStr),
+                seed: String(seed || 'GEO-2026'),
+                totalRounds: parseInt(totalRounds, 10) || 5,
+                currentRound: 1,
+                roundStartTime: 0,
+                roundStartPerf: 0,
+                totalElapsedMs: 0,
+                roundHistory: [],
+                rng: null
+            };
+
+            p2pState.active = true;
+            p2pState.roomId = roomId;
+            p2pState.isHost = true;
+            p2pState.pseudo = sanitizePseudo(pseudo) || getSavedPseudo();
+            p2pState.joined = isValidPseudo(p2pState.pseudo);
+            p2pState.ready = p2pState.joined;
+            p2pState.gameStarted = false;
+            p2pState.countdownActive = false;
+            p2pState.roundsData = [];
+            p2pState.lastEventText = '';
+            p2pState.players = [
+                createPlayerRecord({
+                    clientId: p2pState.clientId,
+                    pseudo: p2pState.pseudo || 'Hôte',
+                    isHost: true,
+                    joined: p2pState.joined,
+                    ready: p2pState.ready
+                })
+            ];
+
+            resetToStandbyBoard();
+            updateMultiplayerBanner();
+            openP2PLobbyModal();
+            startP2PScoreboardTicker();
+            connectP2PTransport();
+        }
+
+        function openP2PRoomAsGuest({ roomId, cfg, initialPseudo = '' }) {
+            cleanupP2PConnections();
+
+            const seed = cfg ? String(cfg.s) : 'SYNC...';
+            const totalRounds = cfg ? (parseInt(cfg.r, 10) || 5) : 5;
+
+            multiplayerState = {
+                active: true,
+                seed: seed,
                 totalRounds: totalRounds,
                 currentRound: 1,
                 roundStartTime: 0,
+                roundStartPerf: 0,
                 totalElapsedMs: 0,
                 roundHistory: [],
-                rng: createMulberry32(hashSeedString(`${seedStr}|${describeCurrentConfig()}`))
+                rng: null
             };
+
+            p2pState.active = true;
+            p2pState.roomId = roomId;
+            p2pState.isHost = false;
+            p2pState.pseudo = sanitizePseudo(initialPseudo);
+            p2pState.joined = false;
+            p2pState.ready = false;
+            p2pState.gameStarted = false;
+            p2pState.countdownActive = false;
+            p2pState.roundsData = [];
+            p2pState.lastEventText = '';
+            p2pState.players = [];
+
+            resetToStandbyBoard();
             updateMultiplayerBanner();
-            initGame();
+            openP2PLobbyModal();
+            startP2PScoreboardTicker();
+            connectP2PTransport();
         }
 
-        function exitChallengeMode() {
+        function setP2PStatus(text, tone = 'amber') {
+            p2pState.statusText = text;
+            p2pState.statusTone = tone;
+            const lobbyBadge = document.getElementById('lobby-connection-badge');
+            const bannerBadge = document.getElementById('p2p-banner-status');
+
+            const toneClasses = {
+                emerald: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+                amber: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+                red: 'bg-red-500/15 text-red-300 border-red-500/30'
+            };
+            const cls = toneClasses[tone] || toneClasses.amber;
+
+            if (lobbyBadge) {
+                lobbyBadge.className = `px-2.5 py-1 rounded-full text-[11px] font-mono border shrink-0 ${cls}`;
+                lobbyBadge.innerText = text;
+            }
+            if (bannerBadge) {
+                bannerBadge.className = `px-2 py-0.5 rounded-md border font-mono text-[10px] shrink-0 ${cls}`;
+                const count = p2pState.players.filter(p => p.joined).length || 1;
+                bannerBadge.innerText = `● ${text} (${count}j)`;
+            }
+        }
+
+        function connectP2PTransport() {
+            if (typeof Peer === 'undefined') {
+                activateBroadcastTransport();
+                return;
+            }
+
+            p2pState.transport = 'peerjs';
+            setP2PStatus('Connexion P2P...', 'amber');
+            document.getElementById('lobby-host-unavailable-box').classList.add('hidden');
+
+            const hostPeerId = `geocity-room-${p2pState.roomId}`;
+            const peer = p2pState.isHost
+                ? new Peer(hostPeerId, P2P_PEER_CONFIG)
+                : new Peer(P2P_PEER_CONFIG);
+            p2pState.peer = peer;
+
+            let opened = false;
+            p2pState.signalingTimeout = setTimeout(() => {
+                if (!opened && p2pState.active) {
+                    activateBroadcastTransport();
+                }
+            }, 6500);
+
+            peer.on('open', () => {
+                opened = true;
+                if (p2pState.signalingTimeout) {
+                    clearTimeout(p2pState.signalingTimeout);
+                    p2pState.signalingTimeout = null;
+                }
+
+                // Also attach local BroadcastChannel listener on same browser for seamless tab testing
+                attachPassiveBroadcastBridge();
+
+                if (p2pState.isHost) {
+                    setP2PStatus('P2P En ligne', 'emerald');
+                    renderLobbyPlayers();
+                } else {
+                    setP2PStatus('Connexion hôte...', 'amber');
+                    const conn = peer.connect(hostPeerId, { reliable: true });
+                    p2pState.hostConn = conn;
+                    setupGuestConnHandlers(conn);
+                }
+            });
+
+            peer.on('connection', (conn) => {
+                if (!p2pState.isHost) {
+                    conn.close();
+                    return;
+                }
+                setupHostConnHandlers(conn);
+            });
+
+            peer.on('error', (err) => {
+                console.warn('PeerJS error:', err);
+                if (err && err.type === 'unavailable-id' && p2pState.isHost) {
+                    // Room ID collision on signaling server -> rotate to a new room ID
+                    const freshRoomId = generateRoomCode();
+                    p2pState.roomId = freshRoomId;
+                    const newUrl = buildChallengeShareUrl(multiplayerState.seed, multiplayerState.totalRounds, freshRoomId);
+                    try { window.history.replaceState(null, '', `#challenge=${newUrl.split('#challenge=')[1]}`); } catch (e) {}
+                    refreshLobbyMetadataUI();
+                    try { peer.destroy(); } catch (e) {}
+                    connectP2PTransport();
+                    return;
+                }
+                if (err && err.type === 'peer-unavailable' && !p2pState.isHost) {
+                    setP2PStatus('Hôte introuvable', 'red');
+                    document.getElementById('lobby-host-unavailable-box').classList.remove('hidden');
+                    // Try local BroadcastChannel fallback in case host is local-only
+                    activateBroadcastTransport(true);
+                    return;
+                }
+                if (!opened) {
+                    activateBroadcastTransport();
+                } else {
+                    setP2PStatus('Signal P2P instable', 'amber');
+                }
+            });
+        }
+
+        function attachPassiveBroadcastBridge() {
+            if (typeof BroadcastChannel === 'undefined' || p2pState.broadcastChannel) return;
+            try {
+                const bc = new BroadcastChannel(`geocity-p2p-${p2pState.roomId}`);
+                p2pState.broadcastChannel = bc;
+                bc.onmessage = (ev) => {
+                    const msg = ev.data;
+                    if (!msg || msg._sender === p2pState.clientId) return;
+                    if (p2pState.isHost) {
+                        handleMessageAtHost(msg, null, true);
+                    } else if (!p2pState.hostConn || !p2pState.hostConn.open) {
+                        handleMessageFromHost(msg);
+                    }
+                };
+            } catch (e) {}
+        }
+
+        function activateBroadcastTransport(keepPeerFallback = false) {
+            if (typeof BroadcastChannel === 'undefined') {
+                setP2PStatus('Hors ligne', 'red');
+                return;
+            }
+            if (!keepPeerFallback && p2pState.peer) {
+                try { p2pState.peer.destroy(); } catch (e) {}
+                p2pState.peer = null;
+            }
+            p2pState.transport = 'broadcast';
+            attachPassiveBroadcastBridge();
+            setP2PStatus('P2P Local (Onglets)', 'emerald');
+            if (!p2pState.isHost) {
+                sendToHost({ type: 'HELLO', clientId: p2pState.clientId });
+            } else {
+                broadcastFromHost({
+                    type: 'LOBBY_SYNC',
+                    roomId: p2pState.roomId,
+                    config: getCurrentConfigObject(),
+                    seed: multiplayerState.seed,
+                    totalRounds: multiplayerState.totalRounds,
+                    gameStarted: p2pState.gameStarted,
+                    roundsData: p2pState.gameStarted ? p2pState.roundsData : [],
+                    players: serializePlayersForWire()
+                });
+            }
+        }
+
+        function setupHostConnHandlers(conn) {
+            conn.on('open', () => {
+                p2pState.guestConns.set(conn.peer, { conn, clientId: null });
+                conn.send({
+                    type: 'LOBBY_SYNC',
+                    roomId: p2pState.roomId,
+                    config: getCurrentConfigObject(),
+                    seed: multiplayerState.seed,
+                    totalRounds: multiplayerState.totalRounds,
+                    gameStarted: p2pState.gameStarted,
+                    roundsData: p2pState.gameStarted ? p2pState.roundsData : [],
+                    players: serializePlayersForWire()
+                });
+            });
+
+            conn.on('data', (msg) => {
+                handleMessageAtHost(msg, conn, false);
+            });
+
+            conn.on('close', () => {
+                const entry = p2pState.guestConns.get(conn.peer);
+                p2pState.guestConns.delete(conn.peer);
+                if (entry && entry.clientId) {
+                    markPlayerDisconnected(entry.clientId);
+                }
+            });
+
+            conn.on('error', () => {
+                const entry = p2pState.guestConns.get(conn.peer);
+                p2pState.guestConns.delete(conn.peer);
+                if (entry && entry.clientId) {
+                    markPlayerDisconnected(entry.clientId);
+                }
+            });
+        }
+
+        function setupGuestConnHandlers(conn) {
+            conn.on('open', () => {
+                document.getElementById('lobby-host-unavailable-box').classList.add('hidden');
+                setP2PStatus('Connecté à l\'hôte', 'emerald');
+                sendToHost({ type: 'HELLO', clientId: p2pState.clientId });
+                if (p2pState.joined && isValidPseudo(p2pState.pseudo)) {
+                    sendToHost({
+                        type: 'JOIN_OR_UPDATE',
+                        clientId: p2pState.clientId,
+                        pseudo: p2pState.pseudo,
+                        ready: p2pState.ready
+                    });
+                }
+            });
+
+            conn.on('data', (msg) => {
+                handleMessageFromHost(msg);
+            });
+
+            conn.on('close', () => {
+                if (p2pState.active) {
+                    setP2PStatus('Hôte déconnecté', 'red');
+                    showToast("La connexion P2P avec l'hôte a été interrompue.", "warning");
+                }
+            });
+        }
+
+        function serializePlayersForWire() {
+            return p2pState.players.map(p => ({
+                id: p.id,
+                pseudo: p.pseudo,
+                isHost: p.isHost,
+                online: p.online,
+                joined: p.joined,
+                ready: p.ready,
+                inGame: p.inGame,
+                currentRound: p.currentRound,
+                roundsCompleted: p.roundsCompleted,
+                attemptsInRound: p.attemptsInRound,
+                totalAttempts: p.totalAttempts,
+                bestDistKm: p.bestDistKm,
+                completedTimeMs: p.completedTimeMs,
+                inRound: p.inRound,
+                roundElapsedMs: p.id === p2pState.clientId && p.inRound && multiplayerState.roundStartPerf
+                    ? Math.round(performance.now() - multiplayerState.roundStartPerf)
+                    : (p.inRound ? Math.round(p.roundElapsedMs + (performance.now() - p.lastSyncAt)) : p.roundElapsedMs),
+                finished: p.finished
+            }));
+        }
+
+        function hydrateRemotePlayers(wirePlayers) {
+            if (!Array.isArray(wirePlayers)) return;
+            const now = performance.now();
+            p2pState.players = wirePlayers.map(wp => ({
+                ...wp,
+                lastSyncAt: now
+            }));
+            renderLobbyPlayers();
+            renderP2PScoreboards();
+            updateMultiplayerBanner();
+        }
+
+        function broadcastFromHost(payload) {
+            const msg = { ...payload, _sender: p2pState.clientId };
+            p2pState.guestConns.forEach(entry => {
+                if (entry.conn && entry.conn.open) {
+                    try { entry.conn.send(msg); } catch (e) {}
+                }
+            });
+            if (p2pState.broadcastChannel) {
+                try { p2pState.broadcastChannel.postMessage(msg); } catch (e) {}
+            }
+        }
+
+        function sendToHost(payload) {
+            const msg = { ...payload, _sender: p2pState.clientId };
+            if (p2pState.hostConn && p2pState.hostConn.open) {
+                try {
+                    p2pState.hostConn.send(msg);
+                    return;
+                } catch (e) {}
+            }
+            if (p2pState.broadcastChannel) {
+                try { p2pState.broadcastChannel.postMessage(msg); } catch (e) {}
+            }
+        }
+
+        function markPlayerDisconnected(clientId) {
+            const idx = p2pState.players.findIndex(p => p.id === clientId);
+            if (idx === -1) return;
+            if (!p2pState.gameStarted && !p2pState.players[idx].inGame) {
+                p2pState.players.splice(idx, 1);
+            } else {
+                p2pState.players[idx].online = false;
+                p2pState.players[idx].inRound = false;
+            }
+            broadcastFromHost({ type: 'SCOREBOARD_SYNC', players: serializePlayersForWire() });
+            renderLobbyPlayers();
+            renderP2PScoreboards();
+        }
+
+        function handleMessageAtHost(msg, conn, viaBroadcast) {
+            if (!msg || !msg.type) return;
+
+            if (msg.type === 'HELLO') {
+                if (conn && p2pState.guestConns.has(conn.peer)) {
+                    p2pState.guestConns.get(conn.peer).clientId = msg.clientId;
+                }
+                const syncMsg = {
+                    type: 'LOBBY_SYNC',
+                    roomId: p2pState.roomId,
+                    config: getCurrentConfigObject(),
+                    seed: multiplayerState.seed,
+                    totalRounds: multiplayerState.totalRounds,
+                    gameStarted: p2pState.gameStarted,
+                    roundsData: p2pState.gameStarted ? p2pState.roundsData : [],
+                    players: serializePlayersForWire()
+                };
+                if (conn && conn.open) {
+                    conn.send({ ...syncMsg, _sender: p2pState.clientId });
+                } else if (viaBroadcast && p2pState.broadcastChannel) {
+                    p2pState.broadcastChannel.postMessage({ ...syncMsg, _sender: p2pState.clientId });
+                }
+                return;
+            }
+
+            if (msg.type === 'JOIN_OR_UPDATE') {
+                if (conn && p2pState.guestConns.has(conn.peer)) {
+                    p2pState.guestConns.get(conn.peer).clientId = msg.clientId;
+                }
+                const cleanPseudo = sanitizePseudo(msg.pseudo);
+                if (!isValidPseudo(cleanPseudo)) return;
+
+                let player = p2pState.players.find(p => p.id === msg.clientId);
+                if (!player) {
+                    player = createPlayerRecord({
+                        clientId: msg.clientId,
+                        pseudo: cleanPseudo,
+                        isHost: false,
+                        joined: true,
+                        ready: Boolean(msg.ready)
+                    });
+                    if (p2pState.gameStarted) {
+                        player.inGame = true;
+                        player.inRound = true;
+                    }
+                    p2pState.players.push(player);
+                } else {
+                    player.pseudo = cleanPseudo;
+                    player.online = true;
+                    player.joined = true;
+                    player.ready = Boolean(msg.ready);
+                }
+
+                broadcastFromHost({
+                    type: 'LOBBY_SYNC',
+                    roomId: p2pState.roomId,
+                    config: getCurrentConfigObject(),
+                    seed: multiplayerState.seed,
+                    totalRounds: multiplayerState.totalRounds,
+                    gameStarted: p2pState.gameStarted,
+                    roundsData: p2pState.gameStarted ? p2pState.roundsData : [],
+                    players: serializePlayersForWire()
+                });
+                renderLobbyPlayers();
+                renderP2PScoreboards();
+                updateMultiplayerBanner();
+                return;
+            }
+
+            if (msg.type === 'PLAYER_PROGRESS') {
+                const player = p2pState.players.find(p => p.id === msg.clientId);
+                if (!player) return;
+                player.online = true;
+                player.inGame = true;
+                player.currentRound = msg.round;
+                player.attemptsInRound = msg.attemptsInRound;
+                player.totalAttempts = msg.totalAttempts;
+                player.bestDistKm = msg.bestDistKm;
+                player.completedTimeMs = msg.completedTimeMs;
+                player.roundElapsedMs = msg.roundElapsedMs || 0;
+                player.inRound = Boolean(msg.inRound);
+                player.lastSyncAt = performance.now();
+
+                broadcastFromHost({ type: 'SCOREBOARD_SYNC', players: serializePlayersForWire() });
+                renderP2PScoreboards();
+                return;
+            }
+
+            if (msg.type === 'ROUND_FOUND') {
+                const player = p2pState.players.find(p => p.id === msg.clientId);
+                if (player) {
+                    player.online = true;
+                    player.inGame = true;
+                    player.currentRound = msg.round;
+                    player.roundsCompleted = Math.max(player.roundsCompleted, msg.round);
+                    player.attemptsInRound = msg.attemptsInRound;
+                    player.totalAttempts = msg.totalAttempts;
+                    player.bestDistKm = 0;
+                    player.completedTimeMs = msg.completedTimeMs;
+                    player.roundElapsedMs = 0;
+                    player.inRound = false;
+                    player.finished = Boolean(msg.finished);
+                    player.lastSyncAt = performance.now();
+                }
+
+                const alertPayload = {
+                    type: 'PRESSURE_ALERT',
+                    finderClientId: msg.clientId,
+                    finderPseudo: msg.pseudo || (player ? player.pseudo : 'Un joueur'),
+                    round: msg.round,
+                    totalRounds: multiplayerState.totalRounds,
+                    attemptsInRound: msg.attemptsInRound,
+                    totalAttempts: msg.totalAttempts,
+                    roundDurationMs: msg.roundDurationMs,
+                    completedTimeMs: msg.completedTimeMs,
+                    finished: Boolean(msg.finished)
+                };
+
+                triggerPressureAlert(alertPayload);
+                broadcastFromHost(alertPayload);
+                broadcastFromHost({ type: 'SCOREBOARD_SYNC', players: serializePlayersForWire() });
+                renderP2PScoreboards();
+                return;
+            }
+
+            if (msg.type === 'LEAVE') {
+                markPlayerDisconnected(msg.clientId);
+            }
+        }
+
+        function handleMessageFromHost(msg) {
+            if (!msg || !msg.type) return;
+
+            if (msg.type === 'LOBBY_SYNC') {
+                document.getElementById('lobby-host-unavailable-box').classList.add('hidden');
+                setP2PStatus(p2pState.transport === 'broadcast' ? 'P2P Local (Onglets)' : 'Connecté à l\'hôte', 'emerald');
+
+                if (msg.config) {
+                    applyChallengeConfigObject(msg.config);
+                }
+                if (msg.seed) multiplayerState.seed = msg.seed;
+                if (msg.totalRounds) multiplayerState.totalRounds = msg.totalRounds;
+                p2pState.gameStarted = Boolean(msg.gameStarted);
+                if (Array.isArray(msg.roundsData) && msg.roundsData.length > 0) {
+                    p2pState.roundsData = msg.roundsData;
+                }
+                hydrateRemotePlayers(msg.players);
+                refreshLobbyMetadataUI();
+                updateLobbyActionButtonsState();
+                return;
+            }
+
+            if (msg.type === 'START_COUNTDOWN') {
+                if (msg.config) applyChallengeConfigObject(msg.config);
+                multiplayerState.seed = msg.seed;
+                multiplayerState.totalRounds = msg.totalRounds;
+                p2pState.gameStarted = true;
+                p2pState.roundsData = msg.roundsData || [];
+                hydrateRemotePlayers(msg.players);
+
+                // Only auto-start countdown for guests who entered a valid pseudonym and clicked Play/Ready
+                if (p2pState.joined && isValidPseudo(p2pState.pseudo)) {
+                    beginSynchronizedCountdown();
+                } else {
+                    updateLobbyActionButtonsState();
+                    showToast("L'hôte a lancé la course ! Entrez votre pseudo et cliquez sur Jouer.", "info");
+                }
+                return;
+            }
+
+            if (msg.type === 'SCOREBOARD_SYNC') {
+                hydrateRemotePlayers(msg.players);
+                return;
+            }
+
+            if (msg.type === 'PRESSURE_ALERT') {
+                triggerPressureAlert(msg);
+                return;
+            }
+
+            if (msg.type === 'RETURN_TO_LOBBY') {
+                p2pState.gameStarted = false;
+                p2pState.ready = false;
+                p2pState.roundsData = [];
+                p2pState.lastEventText = '';
+                if (msg.seed) multiplayerState.seed = msg.seed;
+                if (msg.totalRounds) multiplayerState.totalRounds = msg.totalRounds;
+                hydrateRemotePlayers(msg.players);
+                resetToStandbyBoard();
+                document.getElementById('victory-modal').classList.add('hidden');
+                dismissPressureBanner();
+                openP2PLobbyModal();
+                showToast("L'hôte a rouvert le salon pour une nouvelle manche !", "info");
+                return;
+            }
+
+            if (msg.type === 'HOST_CLOSED') {
+                setP2PStatus('Salon fermé', 'red');
+                showToast("L'hôte a quitté et fermé le salon P2P.", "warning");
+            }
+        }
+
+        function promoteSelfToHost() {
+            p2pState.isHost = true;
+            p2pState.joined = isValidPseudo(p2pState.pseudo);
+            p2pState.ready = p2pState.joined;
+            p2pState.players = [
+                createPlayerRecord({
+                    clientId: p2pState.clientId,
+                    pseudo: p2pState.pseudo || 'Hôte',
+                    isHost: true,
+                    joined: p2pState.joined,
+                    ready: p2pState.ready
+                })
+            ];
+            document.getElementById('lobby-host-unavailable-box').classList.add('hidden');
+            cleanupP2PConnections();
+            refreshLobbyMetadataUI();
+            startP2PScoreboardTicker();
+            connectP2PTransport();
+        }
+
+        function openP2PLobbyModal() {
+            refreshLobbyMetadataUI();
+            const lobbyPseudoInput = document.getElementById('lobby-pseudo-input');
+            if (lobbyPseudoInput) {
+                lobbyPseudoInput.value = p2pState.pseudo || getSavedPseudo();
+                syncPseudoInputs(lobbyPseudoInput.value);
+            }
+            renderLobbyPlayers();
+            updateLobbyActionButtonsState();
+            document.getElementById('p2p-lobby-modal').classList.remove('hidden');
+        }
+
+        function closeP2PLobbyModal() {
+            document.getElementById('p2p-lobby-modal').classList.add('hidden');
+        }
+
+        function refreshLobbyMetadataUI() {
+            const roleBadge = document.getElementById('lobby-role-badge');
+            if (roleBadge) {
+                roleBadge.innerText = p2pState.isHost ? 'Hôte' : 'Participant';
+                roleBadge.className = p2pState.isHost
+                    ? 'px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold uppercase'
+                    : 'px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold uppercase';
+            }
+
+            const cfgSummary = document.getElementById('lobby-config-summary');
+            if (cfgSummary) {
+                cfgSummary.innerText = `${describeCurrentConfig()} · ${multiplayerState.totalRounds} tours · ${multiplayerState.seed}`;
+            }
+
+            const roomCodeEl = document.getElementById('lobby-room-code');
+            if (roomCodeEl) roomCodeEl.innerText = p2pState.roomId || '------';
+
+            const shareUrlEl = document.getElementById('lobby-share-url');
+            if (shareUrlEl) {
+                shareUrlEl.value = buildChallengeShareUrl(multiplayerState.seed, multiplayerState.totalRounds, p2pState.roomId);
+            }
+        }
+
+        function onLobbyPseudoInput(val) {
+            syncPseudoInputs(val);
+            const clean = sanitizePseudo(val);
+            if (p2pState.isHost) {
+                const hostPlayer = p2pState.players.find(p => p.id === p2pState.clientId);
+                if (hostPlayer) {
+                    hostPlayer.pseudo = clean || 'Hôte';
+                    hostPlayer.joined = isValidPseudo(clean);
+                    hostPlayer.ready = hostPlayer.joined;
+                    p2pState.joined = hostPlayer.joined;
+                    p2pState.ready = hostPlayer.ready;
+                    renderLobbyPlayers();
+                    broadcastFromHost({
+                        type: 'LOBBY_SYNC',
+                        roomId: p2pState.roomId,
+                        config: getCurrentConfigObject(),
+                        seed: multiplayerState.seed,
+                        totalRounds: multiplayerState.totalRounds,
+                        gameStarted: p2pState.gameStarted,
+                        roundsData: p2pState.gameStarted ? p2pState.roundsData : [],
+                        players: serializePlayersForWire()
+                    });
+                }
+            } else if (!isValidPseudo(clean)) {
+                p2pState.ready = false;
+                updateLobbyActionButtonsState();
+            } else if (p2pState.joined) {
+                sendToHost({
+                    type: 'JOIN_OR_UPDATE',
+                    clientId: p2pState.clientId,
+                    pseudo: clean,
+                    ready: p2pState.ready
+                });
+            }
+        }
+
+        function updateLobbyActionButtonsState() {
+            const validPseudo = isValidPseudo(p2pState.pseudo);
+            const hostBtn = document.getElementById('btn-lobby-host-play');
+            const guestBtn = document.getElementById('btn-lobby-guest-play');
+            const waitMsg = document.getElementById('lobby-waiting-msg');
+            const resumeBtn = document.getElementById('btn-lobby-resume-game');
+            const hintEl = document.getElementById('lobby-pseudo-hint');
+
+            if (hintEl) {
+                if (validPseudo) {
+                    hintEl.className = 'text-[11px] text-emerald-400 mt-1.5';
+                    hintEl.innerText = `✓ Pseudonyme prêt : ${p2pState.pseudo}`;
+                } else {
+                    hintEl.className = 'text-[11px] text-amber-300/90 mt-1.5';
+                    hintEl.innerText = 'Entrez un pseudonyme d\'au moins 2 caractères pour activer le bouton.';
+                }
+            }
+
+            if (p2pState.isHost) {
+                hostBtn.classList.remove('hidden');
+                guestBtn.classList.add('hidden');
+                waitMsg.classList.add('hidden');
+                hostBtn.disabled = !validPseudo;
+                hostBtn.innerText = p2pState.gameStarted
+                    ? '▶ Relancer la course pour tous'
+                    : '▶ Jouer (Lancer le chrono pour tous)';
+            } else {
+                hostBtn.classList.add('hidden');
+                guestBtn.classList.remove('hidden');
+                guestBtn.disabled = !validPseudo;
+                if (p2pState.gameStarted) {
+                    guestBtn.innerText = '▶ Jouer (Rejoindre la course en cours)';
+                    waitMsg.classList.add('hidden');
+                } else if (p2pState.ready && p2pState.joined) {
+                    guestBtn.innerText = '✓ Prêt (Mettre à jour mon pseudo)';
+                    waitMsg.classList.remove('hidden');
+                } else {
+                    guestBtn.innerText = '▶ Jouer (Valider mon pseudo & Prêt)';
+                    waitMsg.classList.add('hidden');
+                }
+            }
+
+            if (p2pState.gameStarted && secretCity) {
+                resumeBtn.classList.remove('hidden');
+            } else {
+                resumeBtn.classList.add('hidden');
+            }
+        }
+
+        function renderLobbyPlayers() {
+            const listEl = document.getElementById('lobby-players-list');
+            const countEl = document.getElementById('lobby-players-count');
+            if (!listEl) return;
+
+            const activePlayers = p2pState.players.filter(p => p.joined || p.isHost);
+            if (countEl) {
+                countEl.innerText = `${activePlayers.length} joueur${activePlayers.length > 1 ? 's' : ''}`;
+            }
+
+            if (activePlayers.length === 0) {
+                listEl.innerHTML = `<p class="text-slate-500 italic py-2 text-center">Connexion au salon en cours...</p>`;
+                return;
+            }
+
+            listEl.innerHTML = activePlayers.map(p => {
+                const isMe = p.id === p2pState.clientId;
+                const statusBadge = p.inGame
+                    ? `<span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-semibold">En course</span>`
+                    : p.ready
+                        ? `<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-semibold">✓ Prêt</span>`
+                        : `<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 text-[10px]">Choix pseudo...</span>`;
+
+                const hostCrown = p.isHost ? `<span class="text-amber-400 mr-1" title="Hôte">👑</span>` : '';
+                const meTag = isMe ? `<span class="text-[10px] text-cyan-400 ml-1">(Vous)</span>` : '';
+                const onlineDot = p.online
+                    ? `<span class="w-2 h-2 rounded-full bg-emerald-400 inline-block shrink-0"></span>`
+                    : `<span class="w-2 h-2 rounded-full bg-slate-600 inline-block shrink-0"></span>`;
+
+                return `
+                    <div class="flex items-center justify-between bg-slate-900/90 px-3 py-2 rounded-xl border ${isMe ? 'border-cyan-500/40' : 'border-slate-800'}">
+                        <div class="flex items-center space-x-2 min-w-0">
+                            ${onlineDot}
+                            <span class="font-semibold text-white truncate">${hostCrown}${escapeHtml(p.pseudo)}${meTag}</span>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function copyLobbyRoomCode() {
+            copyTextToClipboard(p2pState.roomId);
+            showToast(`Code salon ${p2pState.roomId} copié !`, "info");
+        }
+
+        function copyLobbyShareUrl() {
+            const url = buildChallengeShareUrl(multiplayerState.seed, multiplayerState.totalRounds, p2pState.roomId);
+            copyTextToClipboard(url);
+            const btn = document.getElementById('btn-lobby-copy-url');
+            if (btn) {
+                btn.innerText = 'Copié !';
+                setTimeout(() => { btn.innerText = 'Copier lien'; }, 1800);
+            }
+        }
+
+        function generateSeededRoundsData(seedStr, totalRounds) {
+            if (ACTIVE_GAME_POOL.length < 4) return [];
+            const rng = createMulberry32(hashSeedString(`${seedStr}|${describeCurrentConfig()}`));
+            const rounds = [];
+            let prevSecretKey = null;
+
+            for (let r = 1; r <= totalRounds; r++) {
+                let secretIdx = Math.floor(rng() * ACTIVE_GAME_POOL.length);
+                let candidate = ACTIVE_GAME_POOL[secretIdx];
+                if (ACTIVE_GAME_POOL.length > 4 && prevSecretKey && `${candidate.name}|${candidate.countryCode}` === prevSecretKey) {
+                    secretIdx = (secretIdx + 1) % ACTIVE_GAME_POOL.length;
+                    candidate = ACTIVE_GAME_POOL[secretIdx];
+                }
+                const roundSecret = candidate;
+                prevSecretKey = `${roundSecret.name}|${roundSecret.countryCode}`;
+
+                const clues = [];
+                const usedIndices = new Set([secretIdx]);
+                while (clues.length < 3 && usedIndices.size < ACTIVE_GAME_POOL.length) {
+                    const idx = Math.floor(rng() * ACTIVE_GAME_POOL.length);
+                    if (!usedIndices.has(idx)) {
+                        usedIndices.add(idx);
+                        const city = ACTIVE_GAME_POOL[idx];
+                        const dist = calculateDistance(roundSecret.lat, roundSecret.lon, city.lat, city.lon);
+                        const bearing = calculateBearing(roundSecret.lat, roundSecret.lon, city.lat, city.lon);
+                        clues.push({
+                            city: city,
+                            distance: dist,
+                            bearing: bearing,
+                            cardinal: getCardinalDirection(bearing),
+                            isClue: true,
+                            clueIndex: clues.length + 1
+                        });
+                    }
+                }
+                rounds.push({ secretCity: roundSecret, startingClues: clues });
+            }
+            return rounds;
+        }
+
+        function hostStartP2PRace() {
+            if (!p2pState.isHost) return;
+            const cleanPseudo = savePseudo(document.getElementById('lobby-pseudo-input').value || p2pState.pseudo);
+            if (!isValidPseudo(cleanPseudo)) {
+                document.getElementById('lobby-pseudo-input').focus();
+                showToast("Choisissez d'abord un pseudonyme (min. 2 caractères).", "error");
+                return;
+            }
+            if (ACTIVE_GAME_POOL.length < 4) {
+                showToast("Pas assez de villes dans cette zone pour démarrer.", "error");
+                return;
+            }
+
+            p2pState.pseudo = cleanPseudo;
+            p2pState.joined = true;
+            p2pState.ready = true;
+            p2pState.gameStarted = true;
+            p2pState.lastEventText = '';
+            p2pState.roundsData = generateSeededRoundsData(multiplayerState.seed, multiplayerState.totalRounds);
+
+            const now = performance.now();
+            p2pState.players = p2pState.players.map(p => ({
+                ...p,
+                pseudo: p.id === p2pState.clientId ? cleanPseudo : p.pseudo,
+                joined: p.id === p2pState.clientId ? true : p.joined,
+                inGame: true,
+                currentRound: 1,
+                roundsCompleted: 0,
+                attemptsInRound: 0,
+                totalAttempts: 0,
+                bestDistKm: null,
+                completedTimeMs: 0,
+                inRound: true,
+                roundElapsedMs: 0,
+                lastSyncAt: now,
+                finished: false,
+                roundHistory: []
+            }));
+
+            broadcastFromHost({
+                type: 'START_COUNTDOWN',
+                seed: multiplayerState.seed,
+                totalRounds: multiplayerState.totalRounds,
+                config: getCurrentConfigObject(),
+                roundsData: p2pState.roundsData,
+                players: serializePlayersForWire()
+            });
+
+            beginSynchronizedCountdown();
+        }
+
+        function guestConfirmReadyOrPlay() {
+            const inputEl = document.getElementById('lobby-pseudo-input');
+            const cleanPseudo = savePseudo(inputEl ? inputEl.value : p2pState.pseudo);
+            if (!isValidPseudo(cleanPseudo)) {
+                if (inputEl) inputEl.focus();
+                showToast("Choisissez d'abord un pseudonyme (min. 2 caractères).", "error");
+                return;
+            }
+
+            p2pState.pseudo = cleanPseudo;
+            p2pState.joined = true;
+            p2pState.ready = true;
+
+            sendToHost({
+                type: 'JOIN_OR_UPDATE',
+                clientId: p2pState.clientId,
+                pseudo: cleanPseudo,
+                ready: true
+            });
+
+            updateLobbyActionButtonsState();
+
+            if (p2pState.gameStarted && p2pState.roundsData.length > 0) {
+                closeP2PLobbyModal();
+                launchSynchronizedRace();
+                showToast(`Course rejointe avec le pseudo "${cleanPseudo}" !`, "info");
+            }
+        }
+
+        function beginSynchronizedCountdown() {
+            if (p2pState.countdownTimer) clearInterval(p2pState.countdownTimer);
+            p2pState.countdownActive = true;
+            closeP2PLobbyModal();
+            document.getElementById('victory-modal').classList.add('hidden');
+            dismissPressureBanner();
+
+            const overlay = document.getElementById('p2p-countdown-overlay');
+            const numEl = document.getElementById('p2p-countdown-number');
+            const subEl = document.getElementById('p2p-countdown-sub');
+
+            const steps = ['3', '2', '1', 'GO !'];
+            let stepIdx = 0;
+            numEl.innerText = steps[0];
+            subEl.innerText = `Tour 1 / ${multiplayerState.totalRounds} • Graine ${multiplayerState.seed}`;
+            overlay.classList.remove('hidden');
+            playP2PSound('beep');
+
+            p2pState.countdownTimer = setInterval(() => {
+                stepIdx++;
+                if (stepIdx < steps.length - 1) {
+                    numEl.innerText = steps[stepIdx];
+                    playP2PSound('beep');
+                } else if (stepIdx === steps.length - 1) {
+                    numEl.innerText = steps[stepIdx];
+                    subEl.innerText = 'Chronomètre démarré !';
+                    playP2PSound('go');
+                } else {
+                    clearInterval(p2pState.countdownTimer);
+                    p2pState.countdownTimer = null;
+                    p2pState.countdownActive = false;
+                    overlay.classList.add('hidden');
+                    launchSynchronizedRace();
+                }
+            }, 680);
+        }
+
+        function launchSynchronizedRace() {
+            multiplayerState.active = true;
+            multiplayerState.currentRound = 1;
+            multiplayerState.totalElapsedMs = 0;
+            multiplayerState.roundHistory = [];
+            updateMultiplayerBanner();
+            initGame();
+            renderP2PScoreboards();
+        }
+
+        function p2pSendProgress({ inRound, roundElapsedMs, bestDistKm = null }) {
+            if (!p2pState.active || !p2pState.gameStarted) return;
+            const totalCompletedAttempts = multiplayerState.roundHistory.reduce((s, r) => s + r.attemptsCount, 0);
+            const totalAttempts = totalCompletedAttempts + attempts.length;
+
+            if (p2pState.isHost) {
+                const me = p2pState.players.find(p => p.id === p2pState.clientId);
+                if (me) {
+                    me.inGame = true;
+                    me.currentRound = multiplayerState.currentRound;
+                    me.attemptsInRound = attempts.length;
+                    me.totalAttempts = totalAttempts;
+                    me.bestDistKm = bestDistKm;
+                    me.completedTimeMs = multiplayerState.totalElapsedMs;
+                    me.roundElapsedMs = roundElapsedMs;
+                    me.inRound = inRound;
+                    me.lastSyncAt = performance.now();
+                }
+                broadcastFromHost({ type: 'SCOREBOARD_SYNC', players: serializePlayersForWire() });
+                renderP2PScoreboards();
+            } else {
+                sendToHost({
+                    type: 'PLAYER_PROGRESS',
+                    clientId: p2pState.clientId,
+                    round: multiplayerState.currentRound,
+                    attemptsInRound: attempts.length,
+                    totalAttempts: totalAttempts,
+                    bestDistKm: bestDistKm,
+                    completedTimeMs: multiplayerState.totalElapsedMs,
+                    roundElapsedMs: roundElapsedMs,
+                    inRound: inRound
+                });
+            }
+        }
+
+        function p2pNotifyRoundFound(roundNum, cityName, attemptsInRound, roundDurationMs, finished) {
+            if (!p2pState.active) return;
+            const totalAttempts = multiplayerState.roundHistory.reduce((s, r) => s + r.attemptsCount, 0);
+            const completedTimeMs = multiplayerState.totalElapsedMs;
+
+            if (p2pState.isHost) {
+                const me = p2pState.players.find(p => p.id === p2pState.clientId);
+                if (me) {
+                    me.inGame = true;
+                    me.currentRound = roundNum;
+                    me.roundsCompleted = Math.max(me.roundsCompleted, roundNum);
+                    me.attemptsInRound = attemptsInRound;
+                    me.totalAttempts = totalAttempts;
+                    me.bestDistKm = 0;
+                    me.completedTimeMs = completedTimeMs;
+                    me.roundElapsedMs = 0;
+                    me.inRound = false;
+                    me.finished = finished;
+                    me.lastSyncAt = performance.now();
+                }
+
+                const alertPayload = {
+                    type: 'PRESSURE_ALERT',
+                    finderClientId: p2pState.clientId,
+                    finderPseudo: p2pState.pseudo,
+                    round: roundNum,
+                    totalRounds: multiplayerState.totalRounds,
+                    attemptsInRound: attemptsInRound,
+                    totalAttempts: totalAttempts,
+                    roundDurationMs: roundDurationMs,
+                    completedTimeMs: completedTimeMs,
+                    finished: finished
+                };
+                broadcastFromHost(alertPayload);
+                broadcastFromHost({ type: 'SCOREBOARD_SYNC', players: serializePlayersForWire() });
+                renderP2PScoreboards();
+            } else {
+                sendToHost({
+                    type: 'ROUND_FOUND',
+                    clientId: p2pState.clientId,
+                    pseudo: p2pState.pseudo,
+                    round: roundNum,
+                    cityName: cityName,
+                    attemptsInRound: attemptsInRound,
+                    totalAttempts: totalAttempts,
+                    roundDurationMs: roundDurationMs,
+                    completedTimeMs: completedTimeMs,
+                    finished: finished
+                });
+            }
+        }
+
+        function triggerPressureAlert(alert) {
+            if (!alert) return;
+            const isMe = alert.finderClientId === p2pState.clientId;
+            const timeStr = formatDurationMs(alert.finished ? alert.completedTimeMs : alert.roundDurationMs, true);
+            const eventSummary = alert.finished
+                ? `🏆 ${alert.finderPseudo} a terminé la course (${timeStr})`
+                : `🔥 ${alert.finderPseudo} a trouvé le Tour ${alert.round}/${alert.totalRounds} (${alert.attemptsInRound} essai${alert.attemptsInRound > 1 ? 's' : ''}, ${timeStr})`;
+
+            p2pState.lastEventText = eventSummary;
+            const lastEventEl = document.getElementById('p2p-last-event');
+            if (lastEventEl) {
+                lastEventEl.innerText = eventSummary;
+                lastEventEl.classList.remove('hidden');
+            }
+
+            if (isMe) return;
+
+            playP2PSound('pressure');
+            const banner = document.getElementById('p2p-pressure-banner');
+            const titleEl = document.getElementById('p2p-pressure-title');
+            const msgEl = document.getElementById('p2p-pressure-msg');
+
+            if (titleEl) {
+                titleEl.innerText = alert.finished
+                    ? `🏆 ALERTE FINALE — COURSE TERMINÉE !`
+                    : `🔥 PRESSION MAXIMALE — TOUR ${alert.round}/${alert.totalRounds} TROUVÉ !`;
+            }
+            if (msgEl) {
+                msgEl.innerText = alert.finished
+                    ? `${alert.finderPseudo} vient de boucler tous les tours en ${timeStr} (${alert.totalAttempts} essais) !`
+                    : `${alert.finderPseudo} a localisé la ville en ${alert.attemptsInRound} essai${alert.attemptsInRound > 1 ? 's' : ''} (${timeStr}) — Dépêchez-vous !`;
+            }
+            if (banner) {
+                banner.classList.remove('hidden');
+            }
+
+            if (p2pState.pressureTimeout) clearTimeout(p2pState.pressureTimeout);
+            p2pState.pressureTimeout = setTimeout(() => {
+                dismissPressureBanner();
+            }, 9000);
+        }
+
+        function dismissPressureBanner() {
+            const banner = document.getElementById('p2p-pressure-banner');
+            if (banner) banner.classList.add('hidden');
+        }
+
+        function getSortedScoreboardPlayers() {
+            const joined = p2pState.players.filter(p => p.joined || p.isHost);
+            return [...joined].sort((a, b) => {
+                if (a.finished !== b.finished) return a.finished ? -1 : 1;
+                if (a.finished && b.finished) {
+                    if (a.completedTimeMs !== b.completedTimeMs) return a.completedTimeMs - b.completedTimeMs;
+                    return a.totalAttempts - b.totalAttempts;
+                }
+                if (a.roundsCompleted !== b.roundsCompleted) return b.roundsCompleted - a.roundsCompleted;
+                if (a.completedTimeMs !== b.completedTimeMs) return a.completedTimeMs - b.completedTimeMs;
+                const dA = a.bestDistKm === null || a.bestDistKm === undefined ? 999999 : a.bestDistKm;
+                const dB = b.bestDistKm === null || b.bestDistKm === undefined ? 999999 : b.bestDistKm;
+                return dA - dB;
+            });
+        }
+
+        function computePlayerDisplayTimeMs(p) {
+            if (!p.inGame) return 0;
+            if (p.finished || !p.inRound) return p.completedTimeMs || 0;
+            if (p.id === p2pState.clientId && multiplayerState.roundStartPerf > 0 && !isGameOver) {
+                return (multiplayerState.totalElapsedMs || 0) + Math.max(0, performance.now() - multiplayerState.roundStartPerf);
+            }
+            const extra = Math.max(0, performance.now() - (p.lastSyncAt || performance.now()));
+            return (p.completedTimeMs || 0) + (p.roundElapsedMs || 0) + extra;
+        }
+
+        function buildScoreboardRowsHtml(sortedPlayers) {
+            if (sortedPlayers.length === 0) {
+                return `<p class="text-xs text-slate-500 italic text-center py-2">En attente de joueurs...</p>`;
+            }
+
+            return sortedPlayers.map((p, idx) => {
+                const isMe = p.id === p2pState.clientId;
+                const rank = idx + 1;
+                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+                const crown = p.isHost ? '👑 ' : '';
+                const onlineDot = p.online
+                    ? `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block shrink-0"></span>`
+                    : `<span class="w-1.5 h-1.5 rounded-full bg-slate-600 inline-block shrink-0" title="Déconnecté"></span>`;
+
+                let progressLabel = 'Salon';
+                let badgeClass = 'bg-slate-800 text-slate-400 border-slate-700';
+                if (p.finished) {
+                    progressLabel = `Terminé · ${p.totalAttempts} ess.`;
+                    badgeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+                } else if (p.inGame) {
+                    const distTxt = (p.inRound && p.bestDistKm !== null && p.bestDistKm !== undefined)
+                        ? ` · ${p.bestDistKm.toLocaleString('fr-FR')} km`
+                        : '';
+                    const stateTxt = p.inRound
+                        ? `T${p.currentRound}/${multiplayerState.totalRounds} · ${p.attemptsInRound} ess.${distTxt}`
+                        : `T${p.roundsCompleted}/${multiplayerState.totalRounds} ✓`;
+                    progressLabel = stateTxt;
+                    badgeClass = p.inRound
+                        ? 'bg-indigo-500/15 text-indigo-200 border-indigo-500/30'
+                        : 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30';
+                }
+
+                const timeStr = formatDurationMs(computePlayerDisplayTimeMs(p), true);
+
+                return `
+                    <div class="flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl bg-slate-950/80 border ${isMe ? 'border-cyan-500/45' : 'border-slate-800/90'} text-xs">
+                        <div class="flex items-center space-x-2 min-w-0">
+                            <span class="font-mono font-bold w-5 text-center shrink-0">${medal}</span>
+                            ${onlineDot}
+                            <span class="font-semibold text-white truncate">${crown}${escapeHtml(p.pseudo)}${isMe ? ' <span class="text-[10px] text-cyan-400">(Vous)</span>' : ''}</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5 shrink-0">
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-mono border ${badgeClass}">${progressLabel}</span>
+                            <span data-p2p-time-id="${escapeHtml(p.id)}" class="font-mono font-semibold text-emerald-300 text-[11px] w-[54px] text-right">${timeStr}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderP2PScoreboards() {
+            const card = document.getElementById('p2p-scoreboard-card');
+            const listEl = document.getElementById('p2p-scoreboard-list');
+            const countBadge = document.getElementById('p2p-player-count-badge');
+            const victoryBox = document.getElementById('victory-p2p-scoreboard-box');
+            const victoryList = document.getElementById('victory-p2p-scoreboard-list');
+
+            if (!p2pState.active) {
+                if (card) card.classList.add('hidden');
+                if (victoryBox) victoryBox.classList.add('hidden');
+                return;
+            }
+
+            const sorted = getSortedScoreboardPlayers();
+            const html = buildScoreboardRowsHtml(sorted);
+
+            if (card) card.classList.remove('hidden');
+            if (countBadge) {
+                countBadge.innerText = `${sorted.length} joueur${sorted.length > 1 ? 's' : ''}`;
+            }
+            if (listEl) listEl.innerHTML = html;
+
+            if (victoryBox && multiplayerState.active) {
+                victoryBox.classList.remove('hidden');
+                if (victoryList) victoryList.innerHTML = html;
+            }
+        }
+
+        function startP2PScoreboardTicker() {
+            if (p2pState.scoreboardTickInterval) clearInterval(p2pState.scoreboardTickInterval);
+            p2pState.scoreboardTickInterval = setInterval(() => {
+                if (!p2pState.active || !p2pState.gameStarted) return;
+                p2pState.players.forEach(p => {
+                    if (!p.inRound || p.finished) return;
+                    const formatted = formatDurationMs(computePlayerDisplayTimeMs(p), true);
+                    document.querySelectorAll(`[data-p2p-time-id="${p.id}"]`).forEach(el => {
+                        el.innerText = formatted;
+                    });
+                });
+            }, 200);
+        }
+
+        function returnToP2PLobbyForRematch() {
+            document.getElementById('victory-modal').classList.add('hidden');
+            if (p2pState.isHost) {
+                multiplayerState.seed = generateRandomSeedCode();
+                p2pState.gameStarted = false;
+                p2pState.roundsData = [];
+                p2pState.lastEventText = '';
+                p2pState.players = p2pState.players.map(p => ({
+                    ...p,
+                    inGame: false,
+                    ready: p.id === p2pState.clientId,
+                    currentRound: 1,
+                    roundsCompleted: 0,
+                    attemptsInRound: 0,
+                    totalAttempts: 0,
+                    bestDistKm: null,
+                    completedTimeMs: 0,
+                    inRound: false,
+                    roundElapsedMs: 0,
+                    finished: false,
+                    roundHistory: []
+                }));
+                const newUrl = buildChallengeShareUrl(multiplayerState.seed, multiplayerState.totalRounds, p2pState.roomId);
+                try { window.history.replaceState(null, '', `#challenge=${newUrl.split('#challenge=')[1]}`); } catch (e) {}
+                broadcastFromHost({
+                    type: 'RETURN_TO_LOBBY',
+                    seed: multiplayerState.seed,
+                    totalRounds: multiplayerState.totalRounds,
+                    players: serializePlayersForWire()
+                });
+                resetToStandbyBoard();
+                openP2PLobbyModal();
+            } else {
+                openP2PLobbyModal();
+            }
+        }
+
+        function exitChallengeMode(silent = false) {
+            if (p2pState.active) {
+                if (p2pState.isHost) {
+                    broadcastFromHost({ type: 'HOST_CLOSED' });
+                } else {
+                    sendToHost({ type: 'LEAVE', clientId: p2pState.clientId });
+                }
+            }
+            cleanupP2PConnections();
+            p2pState.active = false;
+            p2pState.gameStarted = false;
+            p2pState.joined = false;
+            p2pState.ready = false;
+            p2pState.roundsData = [];
+            p2pState.players = [];
             multiplayerState.active = false;
+
+            document.getElementById('p2p-lobby-modal').classList.add('hidden');
+            document.getElementById('p2p-countdown-overlay').classList.add('hidden');
+            document.getElementById('p2p-scoreboard-card').classList.add('hidden');
+            document.getElementById('p2p-last-event').classList.add('hidden');
+            dismissPressureBanner();
+
             try { window.history.replaceState(null, '', window.location.href.split('#')[0]); } catch (e) {}
             updateMultiplayerBanner();
             initGame();
-            showToast("Retour au mode Solo.", "info");
+            if (!silent) showToast("Retour au mode Solo.", "info");
         }
 
         function copyActiveChallengeLink() {
             if (!multiplayerState.active) return;
-            const url = buildChallengeShareUrl(multiplayerState.seed, multiplayerState.totalRounds);
+            const url = buildChallengeShareUrl(multiplayerState.seed, multiplayerState.totalRounds, p2pState.roomId);
             copyTextToClipboard(url);
-            showToast("Lien du défi copié dans le presse-papiers !", "info");
+            showToast("Lien d'invitation P2P copié dans le presse-papiers !", "info");
         }
 
         function copyMultiplayerResult() {
-            const url = buildChallengeShareUrl(multiplayerState.seed, multiplayerState.totalRounds);
+            const url = buildChallengeShareUrl(multiplayerState.seed, multiplayerState.totalRounds, p2pState.roomId);
             const totalAttempts = multiplayerState.roundHistory.reduce((acc, r) => acc + r.attemptsCount, 0);
             const totalTimeStr = formatDurationMs(multiplayerState.totalElapsedMs, true);
+            const pseudoLine = p2pState.pseudo ? `👤 Joueur : ${p2pState.pseudo}\n` : '';
             const summaryText =
-                `🌍 Défi GeoCity (${multiplayerState.totalRounds} tours)\n` +
+                `🌍 Défi GeoCity P2P (${multiplayerState.totalRounds} tours)\n` +
+                pseudoLine +
                 `⏱️ Temps total : ${totalTimeStr}\n` +
                 `🎯 Total essais : ${totalAttempts}\n` +
                 `⚙️ Config : ${describeCurrentConfig()}\n` +
-                `🔗 Essaie de battre mon temps : ${url}`;
+                `🔗 Rejoins la course : ${url}`;
             copyTextToClipboard(summaryText);
             const btn = document.getElementById('victory-share-score-btn');
             const span = btn.querySelector('span');
@@ -1193,32 +2861,100 @@
             }
         }
 
+        function setFiltersLockedForMultiplayer(locked) {
+            const toggleBtn = document.getElementById('btn-toggle-settings');
+            const panel = document.getElementById('header-settings-panel');
+            const filterControls = [
+                'geo-scope-select',
+                'region-select',
+                'pool-size-select',
+                'max-per-country-select',
+                'btn-capitals-only',
+                'btn-mode-classic',
+                'btn-mode-hardcore'
+            ];
+
+            if (toggleBtn) {
+                toggleBtn.disabled = locked;
+                if (locked) {
+                    toggleBtn.classList.add('opacity-40', 'pointer-events-none', 'cursor-not-allowed');
+                    toggleBtn.setAttribute('aria-expanded', 'false');
+                    toggleBtn.title = 'Filtres verrouillés en multijoueur';
+                } else {
+                    toggleBtn.classList.remove('opacity-40', 'pointer-events-none', 'cursor-not-allowed');
+                    toggleBtn.title = '';
+                }
+            }
+
+            if (panel) {
+                if (locked) {
+                    panel.classList.add('hidden', 'opacity-45', 'pointer-events-none', 'select-none');
+                    panel.classList.remove('grid');
+                } else {
+                    panel.classList.remove('opacity-45', 'pointer-events-none', 'select-none');
+                }
+            }
+
+            filterControls.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (locked) {
+                    el.disabled = true;
+                } else if (id === 'geo-scope-select' || id === 'btn-capitals-only' || id === 'btn-mode-classic' || id === 'btn-mode-hardcore') {
+                    el.disabled = false;
+                }
+            });
+
+            if (!locked) {
+                const regionSelect = document.getElementById('region-select');
+                if (regionSelect) {
+                    regionSelect.disabled = geoScopeType !== 'COUNTRY' || regionSelect.options.length <= 1;
+                }
+                const poolSelect = document.getElementById('pool-size-select');
+                if (poolSelect) {
+                    poolSelect.disabled = Boolean(capitalsOnlyMode && geoScopeType !== 'COUNTRY');
+                }
+                const maxCountrySelect = document.getElementById('max-per-country-select');
+                if (maxCountrySelect) {
+                    maxCountrySelect.disabled = Boolean(geoScopeType === 'COUNTRY' || capitalsOnlyMode);
+                }
+            }
+        }
+
         function updateMultiplayerBanner() {
             const banner = document.getElementById('challenge-active-banner');
             const statsGrid = document.getElementById('stats-grid');
             const roundCard = document.getElementById('stat-round-card');
             const timerLabel = document.getElementById('stat-timer-label');
+            const pseudoBadge = document.getElementById('p2p-banner-pseudo');
 
             if (multiplayerState.active) {
                 banner.classList.remove('hidden');
+                if (pseudoBadge) {
+                    pseudoBadge.innerText = `👤 ${p2pState.pseudo || 'Joueur'}`;
+                }
+                setP2PStatus(p2pState.statusText, p2pState.statusTone);
                 document.getElementById('challenge-banner-info').innerText =
-                    `Tour ${multiplayerState.currentRound} / ${multiplayerState.totalRounds} • Graine : ${multiplayerState.seed}`;
+                    `Tour ${multiplayerState.currentRound} / ${multiplayerState.totalRounds} • Salon ${p2pState.roomId || '---'} • Graine : ${multiplayerState.seed}`;
                 statsGrid.classList.remove('grid-cols-3');
                 statsGrid.classList.add('grid-cols-2', 'sm:grid-cols-4');
                 roundCard.classList.remove('hidden');
                 document.getElementById('stat-round').innerText = `${multiplayerState.currentRound}/${multiplayerState.totalRounds}`;
                 timerLabel.innerText = 'Chrono Global';
+                setFiltersLockedForMultiplayer(true);
             } else {
                 banner.classList.add('hidden');
                 statsGrid.classList.remove('grid-cols-2', 'sm:grid-cols-4');
                 statsGrid.classList.add('grid-cols-3');
                 roundCard.classList.add('hidden');
                 timerLabel.innerText = 'Temps';
+                setFiltersLockedForMultiplayer(false);
             }
         }
 
         // Toggle Mobile Settings Drawer
         function toggleMobileSettings() {
+            if (multiplayerState.active) return;
             const panel = document.getElementById('header-settings-panel');
             const btn = document.getElementById('btn-toggle-settings');
             const isHidden = panel.classList.contains('hidden');
@@ -1296,10 +3032,7 @@
 
         // Handle Geo Scope Change (World / Continent / Country)
         function onGeoScopeChange(val) {
-            if (multiplayerState.active) {
-                multiplayerState.active = false;
-                updateMultiplayerBanner();
-            }
+            if (multiplayerState.active) return;
             const regionWrapper = document.getElementById('region-select-wrapper');
             const regionSelect = document.getElementById('region-select');
             selectedRegionCode = 'ALL';
@@ -1328,10 +3061,7 @@
 
         // Handle Region Change inside a Selected Country
         function onRegionChange(val) {
-            if (multiplayerState.active) {
-                multiplayerState.active = false;
-                updateMultiplayerBanner();
-            }
+            if (multiplayerState.active) return;
             selectedRegionCode = val;
             rebuildActiveGamePool();
             initGame();
@@ -1339,10 +3069,7 @@
 
         // Handle Max Cities Per Country Change
         function onMaxPerCountryChange(val) {
-            if (multiplayerState.active) {
-                multiplayerState.active = false;
-                updateMultiplayerBanner();
-            }
+            if (multiplayerState.active) return;
             maxCitiesPerCountry = parseInt(val, 10) || 0;
             rebuildActiveGamePool();
             initGame();
@@ -1419,6 +3146,9 @@
                     poolSelect.parentElement.classList.add('opacity-45', 'pointer-events-none');
                     badgeEl.innerText = `★ ${scopeLabel} : ${ACTIVE_GAME_POOL.length} capitales`;
                     searchInput.placeholder = `Rechercher parmi ${ACTIVE_SEARCH_POOL.length} capitales (${scopeLabel})...`;
+                    if (multiplayerState.active) {
+                        setFiltersLockedForMultiplayer(true);
+                    }
                     return;
                 }
             }
@@ -1447,14 +3177,14 @@
             const capText = (maxCitiesPerCountry > 0 && geoScopeType !== 'COUNTRY') ? ` · max ${maxCitiesPerCountry}/pays` : '';
             badgeEl.innerText = `${scopeLabel} : Top ${ACTIVE_GAME_POOL.length.toLocaleString('fr-FR')}${capText}`;
             searchInput.placeholder = `Rechercher parmi ${ACTIVE_SEARCH_POOL.length.toLocaleString('fr-FR')} villes (${scopeLabel})...`;
+            if (multiplayerState.active) {
+                setFiltersLockedForMultiplayer(true);
+            }
         }
 
         // Handler for Top N Pool Size dropdown
         function onPoolSizeChange(val) {
-            if (multiplayerState.active) {
-                multiplayerState.active = false;
-                updateMultiplayerBanner();
-            }
+            if (multiplayerState.active) return;
             poolSizeLimit = parseInt(val, 10) || 1000;
             rebuildActiveGamePool();
             initGame();
@@ -1463,13 +3193,10 @@
 
         // Handler for "Capitales uniquement" toggle
         function toggleCapitalsOnly() {
+            if (multiplayerState.active) return;
             if (geoScopeType === 'COUNTRY') {
                 showToast("Le filtre Capitales uniquement n'est pas disponible lorsqu'un seul pays est sélectionné.", "warning");
                 return;
-            }
-            if (multiplayerState.active) {
-                multiplayerState.active = false;
-                updateMultiplayerBanner();
             }
             capitalsOnlyMode = !capitalsOnlyMode;
             const btn = document.getElementById('btn-capitals-only');
@@ -1709,7 +3436,8 @@
         }
 
         // Toggle Classic vs Hardcore Mode
-        function setDifficultyMode(mode) {
+        function setDifficultyMode(mode, isProgrammatic = false) {
+            if (multiplayerState.active && !isProgrammatic) return;
             difficultyMode = mode;
             const btnClassic = document.getElementById('btn-mode-classic');
             const btnHardcore = document.getElementById('btn-mode-hardcore');
@@ -1832,9 +3560,14 @@
             return dirs[index];
         }
 
-        // Initialize or Restart Round (supports both Solo random and Seeded Multiplayer)
+        // Initialize or Restart Round (supports both Solo random and Seeded P2P Multiplayer)
         function initGame() {
-            if (ACTIVE_GAME_POOL.length < 4) {
+            if (multiplayerState.active && p2pState.active) {
+                if (!p2pState.gameStarted || !Array.isArray(p2pState.roundsData) || p2pState.roundsData.length === 0) {
+                    resetToStandbyBoard();
+                    return;
+                }
+            } else if (ACTIVE_GAME_POOL.length < 4) {
                 showToast("Pas assez de villes dans cette zone pour lancer une partie (minimum 4 requises).", "error");
                 return;
             }
@@ -1850,32 +3583,48 @@
             hideToast();
             updateMultiplayerBanner();
 
-            // Use deterministic RNG in Multiplayer Race mode, or Math.random() in Solo
-            const randFn = (multiplayerState.active && typeof multiplayerState.rng === 'function')
-                ? multiplayerState.rng
-                : Math.random;
+            if (multiplayerState.active && p2pState.active && p2pState.roundsData[multiplayerState.currentRound - 1]) {
+                const roundObj = p2pState.roundsData[multiplayerState.currentRound - 1];
+                secretCity = roundObj.secretCity;
+                startingClues = roundObj.startingClues.map(c => ({ ...c }));
 
-            // Pick a secret city from the active pool
-            const secretIdx = Math.floor(randFn() * ACTIVE_GAME_POOL.length);
-            secretCity = ACTIVE_GAME_POOL[secretIdx];
+                // Guarantee synced secret city is searchable even if a peer used the built-in fallback DB
+                if (secretCity && !ACTIVE_SEARCH_POOL.some(c => c.name === secretCity.name && c.countryCode === secretCity.countryCode)) {
+                    const enrichedSecret = {
+                        ...secretCity,
+                        normName: secretCity.normName || normalizeStr(secretCity.name),
+                        searchKey: secretCity.searchKey || normalizeStr(`${secretCity.name} ${secretCity.country}`)
+                    };
+                    ACTIVE_SEARCH_POOL = [enrichedSecret, ...ACTIVE_SEARCH_POOL];
+                }
+            } else {
+                // Use deterministic RNG in Multiplayer Race mode, or Math.random() in Solo
+                const randFn = (multiplayerState.active && typeof multiplayerState.rng === 'function')
+                    ? multiplayerState.rng
+                    : Math.random;
 
-            // Pick 3 distinct clue cities from the active pool
-            const usedIndices = new Set([secretIdx]);
-            while (startingClues.length < 3 && usedIndices.size < ACTIVE_GAME_POOL.length) {
-                const idx = Math.floor(randFn() * ACTIVE_GAME_POOL.length);
-                if (!usedIndices.has(idx)) {
-                    usedIndices.add(idx);
-                    const city = ACTIVE_GAME_POOL[idx];
-                    const dist = calculateDistance(secretCity.lat, secretCity.lon, city.lat, city.lon);
-                    const bearing = calculateBearing(secretCity.lat, secretCity.lon, city.lat, city.lon);
-                    startingClues.push({
-                        city: city,
-                        distance: dist,
-                        bearing: bearing,
-                        cardinal: getCardinalDirection(bearing),
-                        isClue: true,
-                        clueIndex: startingClues.length + 1
-                    });
+                // Pick a secret city from the active pool
+                const secretIdx = Math.floor(randFn() * ACTIVE_GAME_POOL.length);
+                secretCity = ACTIVE_GAME_POOL[secretIdx];
+
+                // Pick 3 distinct clue cities from the active pool
+                const usedIndices = new Set([secretIdx]);
+                while (startingClues.length < 3 && usedIndices.size < ACTIVE_GAME_POOL.length) {
+                    const idx = Math.floor(randFn() * ACTIVE_GAME_POOL.length);
+                    if (!usedIndices.has(idx)) {
+                        usedIndices.add(idx);
+                        const city = ACTIVE_GAME_POOL[idx];
+                        const dist = calculateDistance(secretCity.lat, secretCity.lon, city.lat, city.lon);
+                        const bearing = calculateBearing(secretCity.lat, secretCity.lon, city.lat, city.lon);
+                        startingClues.push({
+                            city: city,
+                            distance: dist,
+                            bearing: bearing,
+                            cardinal: getCardinalDirection(bearing),
+                            isClue: true,
+                            clueIndex: startingClues.length + 1
+                        });
+                    }
                 }
             }
 
@@ -1883,7 +3632,11 @@
             if (timerInterval) clearInterval(timerInterval);
             if (multiplayerState.active) {
                 multiplayerState.roundStartTime = Date.now();
+                multiplayerState.roundStartPerf = performance.now();
                 timerInterval = setInterval(updateTimer, 100);
+                if (p2pState.active) {
+                    p2pSendProgress({ inRound: true, roundElapsedMs: 0, bestDistKm: null });
+                }
             } else {
                 startTime = Date.now();
                 timerInterval = setInterval(updateTimer, 1000);
@@ -1899,9 +3652,8 @@
         }
 
         function restartGame() {
-            if (multiplayerState.active) {
-                launchMultiplayerRace(multiplayerState.seed, multiplayerState.totalRounds);
-                showToast(`Course redémarrée au Tour 1 / ${multiplayerState.totalRounds} (Graine : ${multiplayerState.seed}).`, "info");
+            if (multiplayerState.active && p2pState.active) {
+                openP2PLobbyModal();
                 return;
             }
             initGame();
@@ -1912,7 +3664,10 @@
         function updateTimer() {
             if (isGameOver) return;
             if (multiplayerState.active) {
-                const currentRoundMs = Date.now() - multiplayerState.roundStartTime;
+                if (!secretCity) return;
+                const currentRoundMs = multiplayerState.roundStartPerf > 0
+                    ? Math.max(0, performance.now() - multiplayerState.roundStartPerf)
+                    : Math.max(0, Date.now() - multiplayerState.roundStartTime);
                 const totalMs = multiplayerState.totalElapsedMs + currentRoundMs;
                 document.getElementById('stat-timer').innerText = formatDurationMs(totalMs, true);
             } else {
@@ -1925,7 +3680,7 @@
 
         // Handle Guess Submission (accepts either a city object directly or a string query)
         function makeGuess(cityOrName) {
-            if (isGameOver) return;
+            if (isGameOver || !secretCity || p2pState.countdownActive) return;
 
             const searchPool = ACTIVE_SEARCH_POOL.length > 0 ? ACTIVE_SEARCH_POOL : ALL_CITIES_DB;
 
@@ -1988,6 +3743,13 @@
                 if (projectionMode === '3d') {
                     initOrUpdateGlobe3D(false);
                 }
+                if (multiplayerState.active && p2pState.active) {
+                    const minDist = Math.min(...attempts.map(a => a.distance));
+                    const roundElapsedMs = multiplayerState.roundStartPerf > 0
+                        ? Math.round(performance.now() - multiplayerState.roundStartPerf)
+                        : 0;
+                    p2pSendProgress({ inRound: true, roundElapsedMs, bestDistKm: minDist });
+                }
             }
         }
 
@@ -2020,10 +3782,15 @@
             const subEl = document.getElementById('victory-modal-subtitle');
             const summaryBox = document.getElementById('multiplayer-summary-box');
             const shareScoreBtn = document.getElementById('victory-share-score-btn');
+            const p2pLobbyBtn = document.getElementById('victory-p2p-lobby-btn');
             const primaryBtn = document.getElementById('victory-primary-btn');
 
             if (multiplayerState.active) {
-                const roundDurationMs = Date.now() - multiplayerState.roundStartTime;
+                const roundDurationMs = Math.round(
+                    multiplayerState.roundStartPerf > 0
+                        ? Math.max(0, performance.now() - multiplayerState.roundStartPerf)
+                        : Math.max(0, Date.now() - multiplayerState.roundStartTime)
+                );
                 multiplayerState.totalElapsedMs += roundDurationMs;
                 multiplayerState.roundHistory.push({
                     round: multiplayerState.currentRound,
@@ -2035,12 +3802,26 @@
                 const isFinalRound = multiplayerState.currentRound >= multiplayerState.totalRounds;
                 document.getElementById('stat-timer').innerText = formatDurationMs(multiplayerState.totalElapsedMs, true);
 
+                if (p2pState.active) {
+                    playP2PSound('victory');
+                    p2pNotifyRoundFound(
+                        multiplayerState.currentRound,
+                        secretCity.name,
+                        attempts.length,
+                        roundDurationMs,
+                        isFinalRound
+                    );
+                    renderP2PScoreboards();
+                }
+
                 if (!isFinalRound) {
                     // Intermediate round cleared -> show brief transition and advance to next round
                     titleEl.innerText = `Tour ${multiplayerState.currentRound} / ${multiplayerState.totalRounds} Validé !`;
                     subEl.innerText = `Temps du tour : ${formatDurationMs(roundDurationMs, true)} • Chronomètre en pause`;
                     summaryBox.classList.add('hidden');
                     shareScoreBtn.classList.add('hidden');
+                    if (p2pLobbyBtn) p2pLobbyBtn.classList.add('hidden');
+                    primaryBtn.classList.remove('hidden');
 
                     document.getElementById('victory-attempts-label').innerText = 'Essais sur ce tour';
                     document.getElementById('victory-attempts').innerText = attempts.length;
@@ -2075,7 +3856,19 @@
 
                     summaryBox.classList.remove('hidden');
                     shareScoreBtn.classList.remove('hidden');
-                    primaryBtn.innerText = 'Rejouer cette même course';
+                    if (p2pState.active) {
+                        if (p2pLobbyBtn) p2pLobbyBtn.classList.remove('hidden');
+                        if (p2pState.isHost) {
+                            primaryBtn.classList.remove('hidden');
+                            primaryBtn.innerText = 'Relancer cette même course (Tous)';
+                        } else {
+                            primaryBtn.classList.add('hidden');
+                        }
+                    } else {
+                        if (p2pLobbyBtn) p2pLobbyBtn.classList.add('hidden');
+                        primaryBtn.classList.remove('hidden');
+                        primaryBtn.innerText = 'Rejouer cette même course';
+                    }
                 }
             } else {
                 // Standard Solo Victory
@@ -2083,6 +3876,9 @@
                 subEl.innerText = 'Vous avez identifié la ville secrète avec précision.';
                 summaryBox.classList.add('hidden');
                 shareScoreBtn.classList.add('hidden');
+                if (p2pLobbyBtn) p2pLobbyBtn.classList.add('hidden');
+                document.getElementById('victory-p2p-scoreboard-box').classList.add('hidden');
+                primaryBtn.classList.remove('hidden');
 
                 document.getElementById('victory-attempts-label').innerText = "Nombre d'essais";
                 document.getElementById('victory-attempts').innerText = attempts.length;
@@ -2102,8 +3898,11 @@
                     multiplayerState.currentRound++;
                     initGame();
                     return;
-                } else {
-                    launchMultiplayerRace(multiplayerState.seed, multiplayerState.totalRounds);
+                } else if (p2pState.active && p2pState.isHost) {
+                    hostStartP2PRace();
+                    return;
+                } else if (p2pState.active) {
+                    returnToP2PLobbyForRematch();
                     return;
                 }
             }
@@ -2219,8 +4018,6 @@
         }
 
         function drawRadar() {
-            if (!secretCity) return;
-
             const container = document.getElementById('radar-container');
             const width = container.getBoundingClientRect().width;
             const height = container.getBoundingClientRect().height;
@@ -2241,6 +4038,28 @@
             ctx.beginPath();
             ctx.arc(cx, cy, maxRadius + 25, 0, Math.PI * 2);
             ctx.fill();
+
+            if (!secretCity) {
+                ctx.lineWidth = 1;
+                for (let i = 1; i <= 4; i++) {
+                    const r = (maxRadius / 4) * i;
+                    ctx.strokeStyle = i === 4 ? 'rgba(56, 189, 248, 0.35)' : 'rgba(56, 189, 248, 0.14)';
+                    ctx.setLineDash(i === 4 ? [] : [4, 4]);
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                ctx.setLineDash([]);
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.12)';
+                for (let angle = 0; angle < 180; angle += 45) {
+                    const rad = toRad(angle);
+                    ctx.beginPath();
+                    ctx.moveTo(cx - Math.cos(rad) * maxRadius, cy - Math.sin(rad) * maxRadius);
+                    ctx.lineTo(cx + Math.cos(rad) * maxRadius, cy + Math.sin(rad) * maxRadius);
+                    ctx.stroke();
+                }
+                return;
+            }
 
             // Determine dynamic radar scale based on maximum vector distance
             const allVectors = [...startingClues, ...attempts];
